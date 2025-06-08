@@ -10,8 +10,6 @@ import sqlite3
 from datetime import datetime
 from bs4 import BeautifulSoup
 import pandas as pd
-from urllib.parse import urljoin, urlparse
-import time
 import logging
 
 # Configure logging
