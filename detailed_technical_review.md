@@ -1,192 +1,238 @@
-# Saskatchewan Lotto Scraper - Technical Review Document
+# Saskatoon Lotto Predictor - Technical Review and Specifications
 
 ## Executive Summary
 
-This document provides a comprehensive technical review of the Saskatchewan Lotto Scraper project, which has been enhanced to support multiple lottery games from the Western Canada Lottery Corporation (WCLC). The project now includes robust error handling, batch historical scraping, and comprehensive testing capabilities.
+This document provides a comprehensive technical review of the Saskatoon Lotto Predictor application, a user-friendly tool designed to help users analyze lottery data and generate predictions for various lottery games. The application features a modular architecture with clear separation of concerns, including a GUI interface, data management capabilities, analytics tools, and prediction algorithms.
 
-The key enhancements include:
-- Integration with actual WCLC URLs for all supported lottery games
-- Support for additional game types (Western Max and Daily Grand)
-- Improved month link extraction for historical data scraping
-- Enhanced data validation for different game types
-- Comprehensive testing framework with both unit and live scraping tests
+Key features include:
+- User-friendly GUI with tabbed interface
+- Support for multiple lottery games (649, Max, Western649, WesternMax, DailyGrand)
+- Data-driven predictions with multiple strategies
+- Statistical analysis of lottery data
+- Flexible data management with CSV and SQLite support
+- Optional data scraping capabilities
 
 ## Project Overview
 
-The Saskatchewan Lotto Scraper is a Python-based tool designed to extract lottery draw data from the Western Canada Lottery Corporation (WCLC) website. It supports multiple lottery games, including Lotto 649, Lotto Max, Western 649, Western Max, and Daily Grand. The scraper can extract data from both current and historical draws, with options for batch processing.
+The Saskatoon Lotto Predictor is a comprehensive Python application designed to help users analyze lottery data and generate predictions. It supports multiple lottery games from the Western Canada Lottery Corporation (WCLC) and provides both random and data-driven prediction strategies.
 
-The project uses BeautifulSoup for HTML parsing, requests for HTTP requests, and pandas for data manipulation. It provides flexible output options, including CSV and SQLite formats.
+The project uses PyQt5 for the GUI, pandas for data manipulation, and includes optional data scraping capabilities using BeautifulSoup and requests. It follows a modular architecture with clear separation of concerns, making it easy to maintain and extend.
 
-## Technical Architecture
+## System Architecture
 
-The project follows a modular, object-oriented architecture with the following key components:
+The application follows a modular architecture with clear separation of concerns:
 
-1. **WCLCScraper Class**: The main class that handles all scraping operations, including HTML fetching, parsing, and data extraction.
-2. **Custom Exception Classes**: `WCLCScraperError` and `DataValidationError` for robust error handling.
-3. **Game-Specific Parsing Methods**: Dedicated methods for parsing different lottery games.
-4. **Batch Historical Scraping**: Functionality to extract historical data by following month navigation links.
-5. **Data Validation**: Comprehensive validation rules for different game types.
-6. **Output Handlers**: Methods for saving data to CSV and SQLite formats.
-7. **CLI Interface**: Command-line interface for flexible usage.
-8. **Testing Framework**: Comprehensive unit and live scraping tests.
+```
+Saskatoon Lotto Predictor
+│
+├── main.py                 # Main entry point
+├── data_manager.py         # Data access and management
+├── analytics.py            # Statistical analysis
+├── predictor.py            # Prediction algorithms
+├── wclc_scraper.py         # Data scraping functionality
+│
+└── gui/                    # GUI components
+    ├── __init__.py
+    └── main_window.py      # Main application window
+```
 
-## Implementation Details
+### Component Interactions
 
-### URL Updates
+The application components interact as follows:
 
-The WCLC URLs have been updated to use the actual URLs for all supported lottery games:
+1. **main.py** - Entry point that initializes and launches the GUI
+2. **GUI (gui/main_window.py)** - Provides the user interface and coordinates interactions between components
+3. **Data Manager (data_manager.py)** - Manages data access, loading, and caching
+4. **Analytics (analytics.py)** - Performs statistical analysis on lottery data
+5. **Predictor (predictor.py)** - Generates predictions based on analytics and user preferences
+6. **WCLC Scraper (wclc_scraper.py)** - Optional tool for scraping lottery data from the Western Canada Lottery Corporation website
+
+## Component Details
+
+### Main Entry Point (main.py)
+
+The main.py file serves as the application entry point. It:
+- Configures logging
+- Imports and initializes the GUI
+- Handles any startup errors gracefully
 
 ```python
-WCLC_URLS = {
-    '649': 'https://www.wclc.com/winning-numbers/lotto-649-extra.htm',
-    'max': 'https://www.wclc.com/winning-numbers/lotto-max-extra.htm',
-    'western649': 'https://www.wclc.com/winning-numbers/western-649-extra.htm',
-    'westernmax': 'https://www.wclc.com/winning-numbers/western-max-extra.htm',
-    'dailygrand': 'https://www.wclc.com/winning-numbers/daily-grand-extra.htm'
-}
+def main():
+    """Main application entry point"""
+    logger.info("Starting Saskatoon Lotto Predictor")
+
+    # Import the GUI module
+    try:
+        from gui.main_window import main as launch_gui
+        logger.info("Successfully imported GUI module")
+    except ImportError as e:
+        logger.error(f"Failed to import GUI module: {e}")
+        print(f"Error: Failed to import GUI module: {e}")
+        return 1
+
+    # Launch the GUI
+    try:
+        logger.info("Launching GUI...")
+        launch_gui()
+        return 0
+    except Exception as e:
+        logger.error(f"Error launching GUI: {e}")
+        print(f"Error: Failed to launch GUI: {e}")
+        return 1
 ```
 
-### Game Type Support
+### Data Manager (data_manager.py)
 
-Support has been added for additional game types:
-- **Western Max**: Similar to Lotto Max but specific to Western Canada
-- **Daily Grand**: A national lottery game with 5 main numbers
+The LotteryDataManager class provides a centralized interface for data access:
+- Supports multiple lottery games (649, Max, Western649, WesternMax, DailyGrand)
+- Loads data from CSV files or SQLite databases
+- Implements caching for performance optimization
+- Provides data cleaning and standardization
+- Offers summary statistics and frequency analysis
 
-The game type validation has been updated to handle these new game types:
+Key methods include:
+- `load_game_data`: Loads data for a specific game
+- `get_game_summary`: Provides summary statistics for a game
+- `get_number_frequency`: Analyzes frequency of numbers
+- `get_recent_draws`: Retrieves recent draw data
 
-```python
-if game_type in ['649', 'western649']:
-    # Validation for 649-type games
-elif game_type in ['max', 'westernmax']:
-    # Validation for Max-type games
-elif game_type == 'dailygrand':
-    # Validation for Daily Grand
-```
+### Analytics Module (analytics.py)
 
-### Parsing Methods
+The LotteryAnalytics class provides statistical analysis:
+- Number frequency analysis
+- Pair analysis (numbers that appear together)
+- Pattern detection (odd/even distribution, high/low distribution)
+- Visualization capabilities (placeholder for future implementation)
 
-New parsing methods have been implemented for the additional game types:
-- `parse_westernmax`: For parsing Western Max draw data
-- `parse_dailygrand`: For parsing Daily Grand draw data
+Key methods include:
+- `analyze_number_frequency`: Analyzes frequency of each number
+- `get_number_pairs`: Finds frequently occurring number pairs
+- `analyze_draw_patterns`: Analyzes patterns in draws
+- `plot_number_frequency`: Visualizes number frequency (placeholder)
 
-These methods follow the same pattern as the existing parsing methods, with game-specific selectors and validation rules.
+### Predictor Module (predictor.py)
 
-### Batch Historical Scraping
+The LotteryPredictor class implements prediction algorithms:
+- Quick Pick (random number generation)
+- Smart Pick (data-driven predictions based on frequency analysis)
+- Multiple prediction strategies (balanced, hot numbers, cold numbers)
+- Confidence scoring for predictions
 
-The batch historical scraping functionality has been enhanced with improved month link extraction:
+Key methods include:
+- `quick_pick`: Generates random number picks
+- `smart_pick`: Generates data-driven number picks
+- `advanced_prediction`: Placeholder for future advanced algorithms
 
-```python
-def extract_month_links(self, html: str, base_url: str) -> List[str]:
-    # Enhanced selectors for finding month links
-    selectors_to_try = [
-        'a.pastMonthYearWinners[rel]',  # Primary selector
-        'a[rel*="back="]',              # Alternative: any link with back parameter
-        '.pastWinNumMonths a[rel]',     # Links within month table
-        '.month-nav a[rel]',            # Alternative month navigation
-        'a[href*="back="]',             # Links with back parameter in href
-        '.pastWinNumMonths a',          # Any links in month table
-        '.month-nav a',                 # Any links in month navigation
-        'a[href*="month="]',            # Links with month parameter
-        'a[href*="year="]'              # Links with year parameter
-    ]
-    
-    # Try rel attribute first, then href if rel is not available
-    rel_url = link.get('rel') or link.get('href')
-    # ...
-```
+### GUI Module (gui/main_window.py)
 
-### Data Validation
+The SaskatoonLottoPredictor class implements the main application window:
+- Tab-based interface (Dashboard, Recent Draws, Analytics, Predictions)
+- Game selection and configuration
+- Data visualization and display
+- User-friendly controls for generating predictions
 
-The data validation has been enhanced to handle different game types with specific rules:
+Key methods include:
+- `init_ui`: Sets up the user interface
+- `create_dashboard_tab`: Creates the dashboard overview tab
+- `create_recent_draws_tab`: Creates the recent draws table tab
+- `create_analytics_tab`: Creates the analytics and charts tab
+- `create_predictions_tab`: Creates the predictions interface tab
+- `generate_quick_pick`: Generates random number picks
+- `generate_smart_pick`: Generates data-driven number picks
 
-```python
-def _validate_draw_data(self, draw_data: Dict, game_type: str) -> bool:
-    # Game-specific validation
-    if game_type in ['649', 'western649']:
-        if len(numbers) != 6:
-            # Validation for 649-type games
-    elif game_type in ['max', 'westernmax']:
-        if len(numbers) != 7:
-            # Validation for Max-type games
-    elif game_type == 'dailygrand':
-        if len(numbers) != 5:
-            # Validation for Daily Grand
-    # ...
-```
+### WCLC Scraper (wclc_scraper.py)
 
-### Error Handling
+The WCLCScraper class provides data acquisition capabilities:
+- Scrapes lottery data from the WCLC website
+- Supports batch historical data collection
+- Implements robust error handling and retry logic
+- Validates and cleans scraped data
+- Exports data to CSV or SQLite formats
 
-The error handling has been improved with more specific error messages and logging:
+Key methods include:
+- `scrape_batch_history`: Scrapes historical data by following month navigation links
+- `parse_lotto649`, `parse_lottomax`, etc.: Game-specific parsing methods
+- `save_to_csv`, `save_to_sqlite`: Output handlers
 
-```python
-try:
-    # Operation that might fail
-except requests.exceptions.Timeout as e:
-    last_exception = e
-    logger.warning(f"Timeout on attempt {attempt + 1}: {e}")
-    time.sleep(2 ** attempt)  # Exponential backoff
-except requests.exceptions.ConnectionError as e:
-    # Handle connection errors
-except requests.exceptions.HTTPError as e:
-    # Handle HTTP errors
-except Exception as e:
-    # Handle unexpected errors
-```
+## Data Flow
 
-## Testing Strategy
+1. Data is loaded from CSV files or databases by the Data Manager
+2. The GUI requests data from the Data Manager to display to the user
+3. When the user requests analytics, the Analytics module processes data from the Data Manager
+4. When the user requests predictions, the Predictor module uses data from both the Data Manager and Analytics module
+5. Results are displayed to the user through the GUI
 
-### Unit Tests
+## Deployment Instructions
 
-The unit tests cover the core functionality of the scraper, including:
-- HTML content validation
-- Draw data validation for different game types
-- Parsing methods for each game type
-- Reading HTML from files
-- Fetching HTML with retry logic
-- Draw fingerprint creation for duplicate detection
-- URL configuration validation
+### Prerequisites
 
-### Live Scraping Tests
+- Python 3.7 or higher
+- Required packages (listed in requirements.txt):
+  - PyQt5 (GUI framework)
+  - pandas (data manipulation)
+  - numpy (numerical operations)
+  - matplotlib (visualization)
+  - beautifulsoup4 and requests (for data scraping)
 
-The live scraping tests verify the scraper's functionality with actual WCLC websites:
-- Testing accessibility of all WCLC URLs
-- Live scraping of current pages for each game type
-- Extraction of month navigation links
-- Batch historical scraping with limited months
+### Installation
 
-The live tests can be run separately from the unit tests using command-line options:
-```
-python test_wclc_scraper.py --live  # Run live tests only
-python test_wclc_scraper.py --all   # Run all tests (unit + live)
-python test_wclc_scraper.py         # Run unit tests only (default)
-```
+1. Clone or download the repository
+2. Install required dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+### Running the Application
+
+1. Launch the application from the main entry point:
+   ```
+   python main.py
+   ```
+
+2. The GUI will load and display the Dashboard tab
+3. Select a lottery game from the dropdown menu
+4. Use the tabs to navigate between different features:
+   - Dashboard: Overview and summary statistics
+   - Recent Draws: Table of recent lottery results
+   - Analytics: Statistical analysis and visualizations
+   - Predictions: Generate and view predictions
+
+### Data Acquisition
+
+There are two ways to acquire lottery data:
+
+1. **Manual Data Files**: Place CSV files containing lottery draw data in the project directory or a 'data' subdirectory. Files should contain columns for game, date, and numbers at minimum.
+
+2. **WCLC Scraper**: Use the included scraper to download data:
+   ```
+   python wclc_scraper.py --game 649 --batch --output 649_results.csv
+   ```
 
 ## Performance Considerations
 
-The scraper includes several performance optimizations:
-- **Exponential backoff** for retry attempts to avoid overwhelming the server
-- **Caching of processed URLs** to avoid duplicate requests
-- **Deduplication of draws** to avoid duplicate data
-- **Respectful scraping** with small delays between requests
-- **Limiting batch scraping** to a specified number of months
+The application includes several performance optimizations:
+- **Data caching**: The Data Manager implements caching to avoid repeated file I/O
+- **Lazy loading**: Components are loaded only when needed
+- **Efficient data structures**: Pandas DataFrames are used for efficient data manipulation
+- **Background processing**: Long-running operations can be moved to background threads
 
 ## Security Considerations
 
-The scraper includes several security considerations:
-- **Proper error handling** to avoid exposing sensitive information
-- **Input validation** to prevent injection attacks
-- **Respectful scraping** to avoid triggering security measures
-- **User-Agent and Referer headers** to identify the scraper
+The application includes several security considerations:
+- **Input validation**: User inputs are validated to prevent errors
+- **Error handling**: Comprehensive error handling to prevent crashes
+- **Data validation**: Lottery data is validated for consistency
+- **Respectful scraping**: The scraper includes delays and proper headers
 
 ## Future Enhancements
 
 Potential future enhancements include:
-- **Date parsing and normalization** for better sorting and filtering
-- **Prize breakdown scraping** for more detailed information
-- **Automatic scheduling** for regular updates
-- **Store location geocoding** for mapping
-- **Statistical analysis** of draw data
+- **Enhanced Analytics**: Implement more advanced statistical analysis and pattern detection
+- **Visualization**: Add interactive charts and graphs for data visualization
+- **Machine Learning**: Incorporate machine learning models for improved predictions
+- **Database Integration**: Add support for cloud databases and real-time updates
+- **Mobile App**: Develop a companion mobile application
 
 ## Conclusion
 
-The Saskatchewan Lotto Scraper has been enhanced with support for multiple lottery games, robust error handling, batch historical scraping, and comprehensive testing capabilities. The project now provides a flexible and reliable tool for extracting lottery draw data from the Western Canada Lottery Corporation website.
+The Saskatoon Lotto Predictor provides a comprehensive solution for lottery analysis and prediction. Its modular architecture ensures maintainability and extensibility, while the user-friendly GUI makes it accessible to users without technical expertise. The application combines data management, statistical analysis, and prediction algorithms to provide a valuable tool for lottery enthusiasts.

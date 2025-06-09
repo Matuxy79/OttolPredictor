@@ -1,7 +1,12 @@
 """
-Test script for the Saskatoon Lotto Predictor GUI
+Legacy test script for the Saskatoon Lotto Predictor GUI
 
-This script launches the GUI and tests basic functionality.
+This script was used for testing the GUI during development.
+It has been replaced by main.py as the primary entry point.
+This file is kept for reference but is no longer needed for normal operation.
+
+To run the application, use:
+    python main.py
 """
 
 import sys
@@ -17,30 +22,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def main():
-    """Main test function"""
-    logger.info("Starting Saskatoon Lotto Predictor GUI test")
-    
-    # Import the GUI module
+    """Legacy test function - use main.py instead"""
+    logger.warning("This is a legacy test script. Please use main.py to run the application.")
+    logger.info("Redirecting to main.py...")
+
+    # Import and run the main module
     try:
-        from gui.main_window import main
-        logger.info("Successfully imported GUI module")
+        import main as app_main
+        return app_main.main()
     except ImportError as e:
-        logger.error(f"Failed to import GUI module: {e}")
-        return False
-    
-    # Launch the GUI
-    try:
-        logger.info("Launching GUI...")
-        main()
-        return True
-    except Exception as e:
-        logger.error(f"Error launching GUI: {e}")
+        logger.error(f"Failed to import main module: {e}")
         return False
 
 if __name__ == "__main__":
+    logger.warning("This is a legacy test script. Please use main.py to run the application.")
     success = main()
-    if success:
-        logger.info("GUI test completed successfully")
-    else:
-        logger.error("GUI test failed")
+    if not success:
         sys.exit(1)
