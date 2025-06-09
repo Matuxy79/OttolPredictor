@@ -13,12 +13,13 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import pandas as pd
 from urllib.parse import urljoin, urlparse
-import logging
 from typing import List, Dict, Optional, Set
+from logging_config import get_logger
+from config import AppConfig
+from schema import DrawRecord, DataValidator
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class WCLCScraperError(Exception):
     """Custom exception for WCLC scraper errors"""
@@ -31,35 +32,26 @@ class DataValidationError(Exception):
 class WCLCScraper:
     """Western Canada Lottery Corporation scraper with batch historical processing"""
 
-    # WCLC official URLs
-    WCLC_URLS = {
-        '649': 'https://www.wclc.com/winning-numbers/lotto-649-extra.htm',
-        'max': 'https://www.wclc.com/winning-numbers/lotto-max-extra.htm',
-        'western649': 'https://www.wclc.com/winning-numbers/western-649-extra.htm',
-        'westernmax': 'https://www.wclc.com/winning-numbers/western-max-extra.htm',
-        'dailygrand': 'https://www.wclc.com/winning-numbers/daily-grand-extra.htm'
-    }
+    @staticmethod
+    def get_game_url(game: str) -> str:
+        """Get URL for a specific game using centralized configuration"""
+        url = AppConfig.get_game_url(game)
+        if not url:
+            raise WCLCScraperError(f"No URL configured for game: {game}")
+        return url
 
-    def __init__(self, max_retries=3, timeout=30):
+    def __init__(self, max_retries=None, timeout=None):
         """
         Initialize WCLC scraper with configuration
 
         Args:
-            max_retries (int): Maximum number of retry attempts
-            timeout (int): Request timeout in seconds
+            max_retries (int): Maximum number of retry attempts (defaults to AppConfig.SCRAPER_RETRIES)
+            timeout (int): Request timeout in seconds (defaults to AppConfig.SCRAPER_TIMEOUT)
         """
-        self.max_retries = max_retries
-        self.timeout = timeout
+        self.max_retries = max_retries if max_retries is not None else AppConfig.SCRAPER_RETRIES
+        self.timeout = timeout if timeout is not None else AppConfig.SCRAPER_TIMEOUT
         self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-CA,en-US;q=0.7,en;q=0.3',
-            'Accept-Encoding': 'gzip, deflate',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Referer': 'https://www.wclc.com/'
-        })
+        self.session.headers.update(AppConfig.HTTP_HEADERS)
 
         # Track processed URLs to avoid duplicates
         self.processed_urls: Set[str] = set()
@@ -143,14 +135,9 @@ class WCLCScraper:
         Returns:
             bool: True if content appears valid
         """
-        # Check for common lottery-related terms
-        lottery_indicators = [
-            'winning numbers', 'draw', 'lotto', 'jackpot', 'bonus',
-            'wclc', 'lottery', 'numbers', 'draw date', 'past winning numbers'
-        ]
-
+        # Check for common lottery-related terms from centralized configuration
         html_lower = html.lower()
-        found_indicators = sum(1 for indicator in lottery_indicators if indicator in html_lower)
+        found_indicators = sum(1 for indicator in AppConfig.LOTTERY_INDICATORS if indicator in html_lower)
 
         # Require at least 3 lottery indicators
         return found_indicators >= 3 and len(html) > 1000
@@ -282,7 +269,7 @@ class WCLCScraper:
 
     def _validate_draw_data(self, draw_data: Dict, game_type: str) -> bool:
         """
-        Validate extracted draw data format
+        Validate extracted draw data format using centralized validation
 
         Args:
             draw_data (dict): Draw data to validate
@@ -292,48 +279,13 @@ class WCLCScraper:
             bool: True if data is valid
         """
         try:
-            # Check required fields
-            required_fields = ['game', 'date', 'numbers']
-            for field in required_fields:
-                if field not in draw_data or not draw_data[field]:
-                    logger.warning(f"Missing required field: {field}")
-                    return False
+            # Use the DataValidator from schema module
+            errors = DataValidator.validate_draw_record(draw_data, game_type)
 
-            # Validate numbers format
-            numbers = draw_data['numbers'].split(',')
-            numbers = [n.strip() for n in numbers if n.strip().isdigit()]
-
-            # Game-specific validation
-            if game_type in ['649', 'western649']:
-                if len(numbers) != 6:
-                    logger.warning(f"Lotto 649 should have 6 numbers, found {len(numbers)}")
-                    return False
-                if any(int(n) < 1 or int(n) > 49 for n in numbers):
-                    logger.warning("Lotto 649 numbers should be between 1-49")
-                    return False
-
-            elif game_type in ['max', 'westernmax']:
-                if len(numbers) != 7:
-                    logger.warning(f"Lotto Max should have 7 numbers, found {len(numbers)}")
-                    return False
-                if any(int(n) < 1 or int(n) > 50 for n in numbers):
-                    logger.warning("Lotto Max numbers should be between 1-50")
-                    return False
-
-            elif game_type == 'dailygrand':
-                if len(numbers) != 5:
-                    logger.warning(f"Daily Grand should have 5 numbers, found {len(numbers)}")
-                    return False
-                if any(int(n) < 1 or int(n) > 49 for n in numbers):
-                    logger.warning("Daily Grand numbers should be between 1-49")
-                    return False
-
-            # Validate bonus number if present
-            if draw_data.get('bonus'):
-                bonus = draw_data['bonus']
-                if not bonus.isdigit():
-                    logger.warning(f"Invalid bonus number format: {bonus}")
-                    return False
+            if errors:
+                for error in errors:
+                    logger.warning(f"Validation error: {error}")
+                return False
 
             return True
 
@@ -989,7 +941,7 @@ Examples:
     input_group.add_argument('--file', type=str, help='Path to saved HTML file')
 
     # Game configuration
-    parser.add_argument('--game', type=str, choices=['649', 'max', 'western649', 'westernmax', 'dailygrand'], 
+    parser.add_argument('--game', type=str, choices=AppConfig.get_supported_games(), 
                        required=True, help='Lottery game type')
 
     # Batch processing options
@@ -1006,10 +958,10 @@ Examples:
     # Advanced options
     parser.add_argument('--save-html', action='store_true', 
                        help='Save downloaded HTML for debugging')
-    parser.add_argument('--retries', type=int, default=3,
-                       help='Maximum retry attempts (default: 3)')
-    parser.add_argument('--timeout', type=int, default=30,
-                       help='Request timeout in seconds (default: 30)')
+    parser.add_argument('--retries', type=int, default=AppConfig.SCRAPER_RETRIES,
+                       help=f'Maximum retry attempts (default: {AppConfig.SCRAPER_RETRIES})')
+    parser.add_argument('--timeout', type=int, default=AppConfig.SCRAPER_TIMEOUT,
+                       help=f'Request timeout in seconds (default: {AppConfig.SCRAPER_TIMEOUT})')
 
     args = parser.parse_args()
 
@@ -1027,12 +979,12 @@ Examples:
             html = scraper.read_html(args.file)
             data = scraper._parse_draws_by_game(html, args.game)
         else:
-            # Use default WCLC URL for the game
-            if args.game in scraper.WCLC_URLS:
-                base_url = scraper.WCLC_URLS[args.game]
+            # Use default WCLC URL for the game from centralized configuration
+            try:
+                base_url = WCLCScraper.get_game_url(args.game)
                 logger.info(f"Using default WCLC URL for {args.game}: {base_url}")
-            else:
-                raise WCLCScraperError("No URL provided and no default URL available for this game")
+            except WCLCScraperError as e:
+                raise WCLCScraperError(f"No URL provided and no default URL available: {e}")
 
         # Process data based on mode
         if not args.file:  # URL-based processing

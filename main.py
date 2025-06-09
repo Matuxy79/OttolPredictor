@@ -7,15 +7,12 @@ It launches the GUI and provides access to all functionality.
 
 import sys
 import os
-import logging
+from logging_config import setup_logging, get_logger
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+setup_logging()
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def main():
     """Main application entry point"""

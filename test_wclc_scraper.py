@@ -9,7 +9,7 @@ import tempfile
 import time
 import sys
 from unittest.mock import patch, Mock
-from main import WCLCScraper, WCLCScraperError, DataValidationError
+from wclc_scraper import WCLCScraper, WCLCScraperError, DataValidationError
 
 class TestWCLCScraper(unittest.TestCase):
 
@@ -40,53 +40,63 @@ class TestWCLCScraper(unittest.TestCase):
 
     def test_validate_draw_data_lotto649_valid(self):
         """Test draw data validation for valid Lotto 649 data"""
+        from schema import DataValidator
         valid_data = {
             'game': 'Lotto 649',
             'date': 'Dec 21, 2024',
             'numbers': '1,15,23,31,42,49',
             'bonus': '7'
         }
-        self.assertTrue(self.scraper._validate_draw_data(valid_data, '649'))
+        errors = DataValidator.validate_draw_record(valid_data, '649')
+        self.assertEqual(len(errors), 0, f"Expected no validation errors, got: {errors}")
 
     def test_validate_draw_data_lotto649_invalid_count(self):
         """Test draw data validation for invalid number count"""
+        from schema import DataValidator
         invalid_data = {
             'game': 'Lotto 649',
             'date': 'Dec 21, 2024',
             'numbers': '1,15,23,31,42',  # Only 5 numbers
             'bonus': '7'
         }
-        self.assertFalse(self.scraper._validate_draw_data(invalid_data, '649'))
+        errors = DataValidator.validate_draw_record(invalid_data, '649')
+        self.assertGreater(len(errors), 0, "Expected validation errors for invalid number count")
 
     def test_validate_draw_data_lotto649_invalid_range(self):
         """Test draw data validation for numbers out of range"""
+        from schema import DataValidator
         invalid_data = {
             'game': 'Lotto 649',
             'date': 'Dec 21, 2024',
             'numbers': '1,15,23,31,42,55',  # 55 is out of range
             'bonus': '7'
         }
-        self.assertFalse(self.scraper._validate_draw_data(invalid_data, '649'))
+        errors = DataValidator.validate_draw_record(invalid_data, '649')
+        self.assertGreater(len(errors), 0, "Expected validation errors for numbers out of range")
 
     def test_validate_draw_data_lottomax_valid(self):
         """Test draw data validation for valid Lotto Max data"""
+        from schema import DataValidator
         valid_data = {
             'game': 'Lotto Max',
             'date': 'Dec 21, 2024',
             'numbers': '1,15,23,31,42,49,50',  # 7 numbers
             'bonus': '7'
         }
-        self.assertTrue(self.scraper._validate_draw_data(valid_data, 'max'))
+        errors = DataValidator.validate_draw_record(valid_data, 'max')
+        self.assertEqual(len(errors), 0, f"Expected no validation errors, got: {errors}")
 
     def test_validate_draw_data_dailygrand_valid(self):
         """Test draw data validation for valid Daily Grand data"""
+        from schema import DataValidator
         valid_data = {
             'game': 'Daily Grand',
             'date': 'Dec 21, 2024',
             'numbers': '1,15,23,31,42',  # 5 numbers
             'bonus': '7'
         }
-        self.assertTrue(self.scraper._validate_draw_data(valid_data, 'dailygrand'))
+        errors = DataValidator.validate_draw_record(valid_data, 'dailygrand')
+        self.assertEqual(len(errors), 0, f"Expected no validation errors, got: {errors}")
 
     def test_parse_lotto649_with_sample_html(self):
         """Test Lotto 649 parsing with sample HTML"""
@@ -212,11 +222,12 @@ class TestWCLCScraper(unittest.TestCase):
 
     def test_wclc_urls_configuration(self):
         """Test that all WCLC URLs are properly configured"""
+        from config import AppConfig
         expected_games = ['649', 'max', 'western649', 'westernmax', 'dailygrand']
 
         for game in expected_games:
-            self.assertIn(game, self.scraper.WCLC_URLS)
-            url = self.scraper.WCLC_URLS[game]
+            url = AppConfig.get_game_url(game)
+            self.assertIsNotNone(url, f"URL for game {game} should be configured")
             self.assertTrue(url.startswith('https://www.wclc.com/'))
             self.assertTrue(url.endswith('-extra.htm'))
 
@@ -254,7 +265,7 @@ class TestWCLCLiveScraping(unittest.TestCase):
     def test_live_scrape_lotto649_current_page(self):
         """Test live scraping of Lotto 649 current page"""
         try:
-            url = self.scraper.WCLC_URLS['649']
+            url = WCLCScraper.get_game_url('649')
             html = self.scraper.fetch_html_with_retry(url)
             draws = self.scraper.parse_lotto649(html)
 
@@ -282,7 +293,7 @@ class TestWCLCLiveScraping(unittest.TestCase):
     def test_live_scrape_lotto_max_current_page(self):
         """Test live scraping of Lotto Max current page"""
         try:
-            url = self.scraper.WCLC_URLS['max']
+            url = WCLCScraper.get_game_url('max')
             html = self.scraper.fetch_html_with_retry(url)
             draws = self.scraper.parse_lottomax(html)
 
@@ -308,7 +319,7 @@ class TestWCLCLiveScraping(unittest.TestCase):
     def test_live_scrape_western649_current_page(self):
         """Test live scraping of Western 649 current page"""
         try:
-            url = self.scraper.WCLC_URLS['western649']
+            url = WCLCScraper.get_game_url('western649')
             html = self.scraper.fetch_html_with_retry(url)
             draws = self.scraper.parse_western649(html)
 
@@ -334,7 +345,7 @@ class TestWCLCLiveScraping(unittest.TestCase):
     def test_live_scrape_westernmax_current_page(self):
         """Test live scraping of Western Max current page"""
         try:
-            url = self.scraper.WCLC_URLS['westernmax']
+            url = WCLCScraper.get_game_url('westernmax')
             html = self.scraper.fetch_html_with_retry(url)
             draws = self.scraper.parse_westernmax(html)
 
@@ -360,7 +371,7 @@ class TestWCLCLiveScraping(unittest.TestCase):
     def test_live_scrape_dailygrand_current_page(self):
         """Test live scraping of Daily Grand current page"""
         try:
-            url = self.scraper.WCLC_URLS['dailygrand']
+            url = WCLCScraper.get_game_url('dailygrand')
             html = self.scraper.fetch_html_with_retry(url)
             draws = self.scraper.parse_dailygrand(html)
 
@@ -386,7 +397,7 @@ class TestWCLCLiveScraping(unittest.TestCase):
     def test_live_extract_month_links(self):
         """Test extraction of month navigation links from live WCLC page"""
         try:
-            url = self.scraper.WCLC_URLS['649']  # Use 649 as test case
+            url = WCLCScraper.get_game_url('649')  # Use 649 as test case
             html = self.scraper.fetch_html_with_retry(url)
             month_links = self.scraper.extract_month_links(html, url)
 
@@ -411,7 +422,7 @@ class TestWCLCLiveScraping(unittest.TestCase):
     def test_live_batch_scraping_limited(self):
         """Test live batch scraping with limited months (to avoid overloading server)"""
         try:
-            url = self.scraper.WCLC_URLS['649']
+            url = WCLCScraper.get_game_url('649')
 
             print(f"\n📦 Live Batch Scraping Test (Limited to 2 months):")
             print(f"   Starting batch scrape from: {url}")
@@ -444,11 +455,13 @@ class TestWCLCLiveScraping(unittest.TestCase):
 
     def test_all_wclc_urls_accessible(self):
         """Test that all WCLC URLs are accessible and return valid content"""
+        from config import AppConfig
         results = {}
 
         print(f"\n🌐 WCLC URLs Accessibility Test:")
 
-        for game, url in self.scraper.WCLC_URLS.items():
+        for game in AppConfig.get_supported_games():
+            url = AppConfig.get_game_url(game)
             try:
                 print(f"   Testing {game}: {url}")
                 html = self.scraper.fetch_html_with_retry(url)
