@@ -198,6 +198,11 @@ class WCLCScraper:
         for link in found_links:
             # Try rel attribute first, then href if rel is not available
             rel_url = link.get('rel') or link.get('href')
+
+            # BeautifulSoup may return rel as a list, extract first item
+            if isinstance(rel_url, list):
+                rel_url = rel_url[0] if rel_url else None
+
             if rel_url:
                 # Handle relative URLs
                 if rel_url.startswith('/'):

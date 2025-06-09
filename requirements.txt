@@ -3,3 +3,5 @@ requests>=2.25.0
 lxml>=4.6.0
 pandas>=1.2.0
 numpy>=1.19.0
+PyQt5>=5.15.0
+matplotlib>=3.3.0
