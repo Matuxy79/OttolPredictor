@@ -276,7 +276,7 @@ class PredictionMetrics:
                             actual_draws: List[List[int]],
                             tier: int) -> TierResult:
         """
-        Calculate uplift statistics for a specific tier
+        Calculate uplift statistics with enhanced sample size protection
 
         Args:
             smart_predictions: Algorithm-generated predictions
@@ -297,22 +297,28 @@ class PredictionMetrics:
         smart_rate = smart_hits / smart_total
         random_rate = random_hits / random_total
 
-        # Calculate uplift percentage
+        # Enhanced uplift calculation with GUI-safe bounds
         if random_rate > 0:
             uplift_percent = ((smart_rate - random_rate) / random_rate) * 100
+            # Cap extreme values for display stability
+            uplift_percent = max(-99.9, min(999.9, uplift_percent))
         else:
-            uplift_percent = 0.0 if smart_rate == 0 else float('inf')
+            # Handle division by zero gracefully
+            uplift_percent = 999.9 if smart_rate > 0 else 0.0
 
         # Calculate confidence intervals
         smart_ci = self.wilson_confidence_interval(smart_rate, smart_total)
         random_ci = self.wilson_confidence_interval(random_rate, random_total)
 
-        # Determine statistical significance
-        is_significant = (
-            not self.intervals_overlap(smart_ci, random_ci) and
-            smart_total >= self.min_sample_size and
-            random_total >= self.min_sample_size
-        )
+        # Enhanced significance determination with multiple guards
+        intervals_dont_overlap = not self.intervals_overlap(smart_ci, random_ci)
+        sufficient_sample_size = (smart_total >= self.min_sample_size and 
+                                 random_total >= self.min_sample_size)
+        meets_absolute_threshold = smart_total >= 30 and random_total >= 30  # ✨ Critical addition
+
+        is_significant = (intervals_dont_overlap and 
+                         sufficient_sample_size and 
+                         meets_absolute_threshold)
 
         # Calculate confidence interval for the uplift difference
         rate_diff = smart_rate - random_rate
@@ -325,7 +331,8 @@ class PredictionMetrics:
         ci_upper = (rate_diff + self.z_score * se_diff) * 100
 
         logger.info(f"Tier {tier}: Smart={smart_rate:.4f}, Random={random_rate:.4f}, "
-                   f"Uplift={uplift_percent:.2f}%, Significant={is_significant}")
+                   f"Uplift={uplift_percent:.2f}%, Significant={is_significant}, "
+                   f"Sample={smart_total}")
 
         return TierResult(
             tier=tier,
@@ -334,9 +341,9 @@ class PredictionMetrics:
             total_trials=smart_total,
             smart_hit_rate=smart_rate,
             random_hit_rate=random_rate,
-            uplift_percent=round(uplift_percent, 2),
-            ci_lower=round(ci_lower, 2),
-            ci_upper=round(ci_upper, 2),
+            uplift_percent=round(uplift_percent, 1),  # Reduced precision for display
+            ci_lower=round(ci_lower, 1),
+            ci_upper=round(ci_upper, 1),
             is_significant=is_significant,
             confidence_level=self.confidence_level
         )
@@ -471,54 +478,132 @@ def quick_uplift_check(
     game_type: GameType = GameType.LOTTO_649
 ) -> Dict[str, Any]:
     """
-    Quick uplift check for GUI display
+    GUI-optimized uplift check with comprehensive error handling
 
-    Returns simplified dict suitable for status bar badges
+    Returns:
+        Dict with keys: uplift_percent, tier, is_significant, sample_size,
+        headline, status, confidence_interval, display_class
     """
-    metrics = PredictionMetrics()
-    report = metrics.generate_uplift_report(
-        smart_predictions, random_predictions, actual_draws, game_type
-    )
 
-    if not report.tier_results:
+    try:
+        if not all([smart_predictions, random_predictions, actual_draws]):
+            return _create_error_result("insufficient_data", "📊 No data")
+
+        metrics = PredictionMetrics()
+        report = metrics.generate_uplift_report(
+            smart_predictions, random_predictions, actual_draws, game_type
+        )
+
+        if not report.tier_results:
+            return _create_error_result("no_results", "📊 No results")
+
+        # Intelligent tier selection for display
+        best_result = _select_best_tier_for_display(report.tier_results)
+
+        if not best_result:
+            return _create_error_result("calculation_error", "📊 Error")
+
+        tier, result = best_result
+
+        # Format for GUI display
+        status, status_icon, display_class = _determine_display_status(result)
+
+        # Handle extreme uplift values for display
+        display_uplift = _format_uplift_for_display(result.uplift_percent)
+
         return {
-            "uplift_percent": 0.0,
-            "tier": 2,
-            "is_significant": False,
-            "sample_size": 0,
-            "summary": "No data",
-            "headline": "📊 No data"
+            "uplift_percent": result.uplift_percent,
+            "tier": tier,
+            "is_significant": result.is_significant,
+            "sample_size": report.total_draws,
+            "headline": f"{display_uplift} {status_icon}",
+            "status": status,
+            "confidence_interval": (result.ci_lower, result.ci_upper),
+            "display_class": display_class,  # For CSS styling
+            "tooltip": _generate_tooltip(result, tier),
+            "evaluation_timestamp": report.analysis_timestamp
         }
 
-    # Find best performing tier
-    best_tier = None
-    best_uplift = -float('inf')
+    except Exception as e:
+        logger.error(f"Quick uplift check failed: {e}")
+        return _create_error_result("error", "📊 Error")
 
-    for tier, result in report.tier_results.items():
-        if result.is_significant and result.uplift_percent > best_uplift:
-            best_tier = tier
-            best_uplift = result.uplift_percent
+def _select_best_tier_for_display(tier_results: Dict[int, TierResult]) -> Optional[Tuple[int, TierResult]]:
+    """Select the most informative tier for GUI display"""
 
-    if best_tier is None:
-        # No significant tiers, show tier 2 as default
-        tier_2 = report.tier_results.get(2)
-        if tier_2:
-            best_tier = 2
-            best_uplift = tier_2.uplift_percent
-        else:
-            best_tier = 1
-            best_uplift = 0.0
+    # Priority 1: Significant positive results (prefer higher tiers)
+    significant_positive = [
+        (tier, result) for tier, result in tier_results.items()
+        if result.is_significant and result.uplift_percent > 0
+    ]
+    if significant_positive:
+        return max(significant_positive, key=lambda x: (x[1].uplift_percent, x[0]))
 
-    result = report.tier_results[best_tier]
+    # Priority 2: Any significant results
+    significant_any = [
+        (tier, result) for tier, result in tier_results.items()
+        if result.is_significant
+    ]
+    if significant_any:
+        return max(significant_any, key=lambda x: x[1].uplift_percent)
+
+    # Priority 3: Tier 2 as default (good balance of frequency and meaning)
+    if 2 in tier_results:
+        return (2, tier_results[2])
+
+    # Priority 4: Any available tier
+    if tier_results:
+        return next(iter(tier_results.items()))
+
+    return None
+
+def _determine_display_status(result: TierResult) -> Tuple[str, str, str]:
+    """Determine status, icon, and CSS class for display"""
+
+    if result.total_trials < 30:
+        return ("small_sample", "⚠️", "warning")
+    elif result.is_significant and result.uplift_percent > 0:
+        return ("significant_positive", "✅", "success")
+    elif result.is_significant and result.uplift_percent < 0:
+        return ("significant_negative", "❌", "danger")
+    else:
+        return ("not_significant", "⚪", "neutral")
+
+def _format_uplift_for_display(uplift: float) -> str:
+    """Format uplift percentage for GUI display"""
+
+    if uplift >= 999:
+        return "999%+"
+    elif uplift <= -99:
+        return "99%-"
+    else:
+        return f"{uplift:+.1f}%"
+
+def _generate_tooltip(result: TierResult, tier: int) -> str:
+    """Generate informative tooltip for GUI"""
+
+    confidence_pct = int(result.confidence_level * 100)
+
+    return (f"Tier {tier} (≥{tier} matches)\n"
+           f"Smart: {result.smart_hits}/{result.total_trials} hits\n"
+           f"Random: {result.random_hits}/{result.total_trials} hits\n"
+           f"Uplift: {result.uplift_percent:+.1f}%\n"
+           f"{confidence_pct}% CI: [{result.ci_lower:.1f}%, {result.ci_upper:.1f}%]")
+
+def _create_error_result(status: str, headline: str) -> Dict[str, Any]:
+    """Create standardized error result for GUI"""
 
     return {
-        "uplift_percent": best_uplift,
-        "tier": best_tier,
-        "is_significant": result.is_significant,
-        "sample_size": report.total_draws,
-        "summary": f"{best_uplift:+.1f}% at tier {best_tier}",
-        "headline": report.best_tier_headline(),
-        "confidence_interval": (result.ci_lower, result.ci_upper)
+        "uplift_percent": 0.0,
+        "tier": 1,
+        "is_significant": False,
+        "sample_size": 0,
+        "headline": headline,
+        "status": status,
+        "confidence_interval": (0.0, 0.0),
+        "display_class": "error",
+        "tooltip": "Insufficient data for analysis",
+        "evaluation_timestamp": datetime.now().isoformat()
     }
 
 def generate_random_baseline(count: int, game_type: GameType) -> List[List[int]]:
