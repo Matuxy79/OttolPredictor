@@ -1,0 +1,291 @@
+name: 🎯 Saskatoon Lotto Predictor CI
+
+on:
+  push:
+    branches: [ main, dev, feature/* ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test-and-lint:
+    name: 🧪 Test & Lint (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.11"]
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: 📦 Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          ${{ runner.os }}-pip-
+          
+    - name: ⬆️ Upgrade pip and install dependencies
+      run: |
+        python -m pip install --upgrade pip wheel setuptools
+        pip install -r requirements.txt
+        
+    - name: 🔧 Install development dependencies
+      run: |
+        pip install black isort pylint mypy pytest pytest-cov pytest-xdist
+        
+    - name: 🎨 Code formatting check (black)
+      run: |
+        black --check --diff .
+        
+    - name: 📐 Import sorting check (isort)
+      run: |
+        isort --check-only --diff .
+        
+    - name: 🔍 Type checking (mypy)
+      run: |
+        mypy metrics.py --ignore-missing-imports
+        
+    - name: 📊 Code quality (pylint)
+      run: |
+        pylint metrics.py --disable=C0103,R0903,R0902 --fail-under=8.0
+        
+    - name: 🧪 Run tests with coverage
+      run: |
+        pytest --cov=. --cov-report=xml --cov-report=term-missing -v
+        
+    - name: 📈 Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-${{ matrix.python-version }}
+        fail_ci_if_error: false
+
+  scipy-fallback-test:
+    name: 🔬 SciPy Fallback Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        
+    - name: 📦 Install minimal dependencies (no SciPy)
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+        # Intentionally skip SciPy to test fallback
+        
+    - name: 🧪 Test metrics without SciPy
+      run: |
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from metrics import PredictionMetrics, GameType, quick_uplift_check
+        
+        # Test data
+        smart = [[1,2,3,4,5,6], [7,8,9,10,11,12]]
+        random = [[13,14,15,16,17,18], [19,20,21,22,23,24]]
+        draws = [[1,2,25,26,27,28], [7,8,29,30,31,32]]
+        
+        # Should work without SciPy
+        result = quick_uplift_check(smart, random, draws)
+        print('✅ SciPy fallback test passed')
+        print(f'Result: {result}')
+        
+        # Test full metrics
+        metrics = PredictionMetrics()
+        report = metrics.generate_uplift_report(smart, random, draws, GameType.LOTTO_649)
+        assert len(report.tier_results) > 0
+        print('✅ Full metrics without SciPy passed')
+        "
+
+  integration-test:
+    name: 🔗 Integration Test
+    runs-on: ubuntu-latest
+    needs: [test-and-lint]
+    
+    steps:
+    - name: 📥 Checkout Repository  
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest
+        
+    - name: 🎯 Run integration tests
+      run: |
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from metrics import *
+        import random
+        
+        print('🧪 Running integration tests...')
+        
+        # Generate realistic test data
+        def generate_test_data(n=50):
+            smart_preds = []
+            random_preds = []
+            draws = []
+            
+            for i in range(n):
+                # Actual draw
+                draw = sorted(random.sample(range(1, 50), 6))
+                draws.append(draw)
+                
+                # Smart prediction (bias toward actual)
+                smart = draw[:2] + sorted(random.sample(range(1, 50), 4))
+                while len(set(smart)) != 6:
+                    smart = draw[:2] + sorted(random.sample(range(1, 50), 4))
+                smart_preds.append(sorted(smart))
+                
+                # Random prediction
+                random_preds.append(sorted(random.sample(range(1, 50), 6)))
+                
+            return smart_preds, random_preds, draws
+        
+        smart, rand, draws = generate_test_data()
+        
+        # Test metrics calculation
+        metrics = PredictionMetrics()
+        report = metrics.generate_uplift_report(smart, rand, draws, GameType.LOTTO_649)
+        
+        assert report.total_draws == len(draws)
+        assert len(report.tier_results) == 6
+        
+        # Test quick check
+        quick = quick_uplift_check(smart, rand, draws)
+        assert 'uplift_percent' in quick
+        assert 'is_significant' in quick
+        
+        print('✅ All integration tests passed!')
+        print(f'Sample uplift: {quick[\"uplift_percent\"]:+.1f}%')
+        "
+
+  security-scan:
+    name: 🛡️ Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: 🔒 Run security scan (bandit)
+      run: |
+        pip install bandit[toml]
+        bandit -r . -f json -o bandit-report.json || true
+        
+    - name: 📋 Upload security report
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: bandit-report.json
+
+  performance-test:
+    name: ⚡ Performance Test
+    runs-on: ubuntu-latest
+    needs: [test-and-lint]
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python 3.12  
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-benchmark
+        
+    - name: ⚡ Run performance benchmarks
+      run: |
+        python -c "
+        import time
+        import sys
+        sys.path.insert(0, '.')
+        from metrics import PredictionMetrics, GameType, generate_random_baseline
+        import random
+        
+        print('⚡ Running performance tests...')
+        
+        # Large dataset test
+        n = 1000
+        smart_preds = []
+        draws = []
+        
+        for _ in range(n):
+            draw = sorted(random.sample(range(1, 50), 6))
+            draws.append(draw)
+            
+            # Smart prediction with some bias
+            smart = draw[:1] + sorted(random.sample(range(1, 50), 5))
+            while len(set(smart)) != 6:
+                smart = draw[:1] + sorted(random.sample(range(1, 50), 5))
+            smart_preds.append(sorted(smart))
+        
+        random_preds = generate_random_baseline(n, GameType.LOTTO_649)
+        
+        # Time the calculation
+        start_time = time.time()
+        metrics = PredictionMetrics()
+        report = metrics.generate_uplift_report(smart_preds, random_preds, draws, GameType.LOTTO_649)
+        end_time = time.time()
+        
+        duration = end_time - start_time
+        rate = n / duration
+        
+        print(f'✅ Processed {n} predictions in {duration:.2f}s ({rate:.1f} predictions/sec)')
+        
+        # Performance threshold check
+        if duration > 5.0:  # Should process 1000 predictions in under 5 seconds
+            print('⚠️ Performance threshold exceeded')
+            sys.exit(1)
+        else:
+            print('✅ Performance test passed')
+        "
+
+# Summary job that depends on all others
+  ci-success:
+    name: ✅ CI Success
+    runs-on: ubuntu-latest
+    needs: [test-and-lint, scipy-fallback-test, integration-test, security-scan, performance-test]
+    if: always()
+    
+    steps:
+    - name: 📊 Check all jobs status
+      run: |
+        if [[ "${{ needs.test-and-lint.result }}" == "success" && 
+              "${{ needs.scipy-fallback-test.result }}" == "success" && 
+              "${{ needs.integration-test.result }}" == "success" && 
+              "${{ needs.performance-test.result }}" == "success" ]]; then
+          echo "🎉 All CI checks passed!"
+        else
+          echo "❌ Some CI checks failed"
+          exit 1
+        fi
