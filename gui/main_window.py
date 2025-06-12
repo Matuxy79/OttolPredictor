@@ -9,9 +9,10 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout
                             QWidget, QTabWidget, QLabel, QPushButton, QTableWidget,
                             QTableWidgetItem, QComboBox, QTextEdit, QGroupBox,
                             QGridLayout, QProgressBar, QStatusBar, QSplitter,
-                            QScrollArea)
+                            QScrollArea, QFrame, QMessageBox, QInputDialog)
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QRunnable, QThreadPool, QObject
 from PyQt5.QtGui import QFont, QIcon, QPalette, QColor
+from datetime import datetime
 
 # For matplotlib integration
 import matplotlib
@@ -27,8 +28,30 @@ from logging_config import get_logger
 from analytics import get_analytics_engine
 from wclc_scraper import WCLCScraper
 from config import AppConfig
+from predictor import SmartPredictor
+from tracking.prediction_logger import PredictionLogger
+import json
 
 logger = get_logger(__name__)
+
+class PredictionWorker(QThread):
+    """Worker thread for prediction generation to prevent GUI freezing"""
+
+    prediction_ready = pyqtSignal(dict)
+    error_occurred = pyqtSignal(str)
+
+    def __init__(self, predictor, game, strategy):
+        super().__init__()
+        self.predictor = predictor
+        self.game = game
+        self.strategy = strategy
+
+    def run(self):
+        try:
+            prediction = self.predictor.generate_prediction(self.game, self.strategy)
+            self.prediction_ready.emit(prediction)
+        except Exception as e:
+            self.error_occurred.emit(str(e))
 
 # Worker thread for scraping
 class ScraperSignals(QObject):
@@ -116,8 +139,14 @@ class SaskatoonLottoPredictor(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        # Initialize prediction components
         self.data_manager = get_data_manager()
         self.analytics_engine = get_analytics_engine()
+        self.predictor = SmartPredictor(self.data_manager)
+        self.prediction_logger = PredictionLogger()
+        self.current_prediction = None
+
         self.thread_pool = QThreadPool()
         self.init_ui()
         self.load_initial_data()
@@ -210,7 +239,7 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.quick_pick_btn.clicked.connect(self.generate_quick_pick)
 
         self.smart_pick_btn = QPushButton("🧠 Smart Pick")
-        self.smart_pick_btn.clicked.connect(self.generate_smart_pick)
+        self.smart_pick_btn.clicked.connect(self.generate_prediction)
 
         # Add widgets to toolbar
         toolbar_layout.addWidget(game_label)
@@ -313,113 +342,255 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.tab_widget.addTab(draws_widget, "📅 Recent Draws")
 
     def create_analytics_tab(self):
-        """Create analytics and charts tab"""
+        """Create comprehensive analytics tab with prediction performance"""
         analytics_widget = QWidget()
         layout = QVBoxLayout(analytics_widget)
 
-        # Create a scroll area for the charts
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_content = QWidget()
-        scroll_layout = QVBoxLayout(scroll_content)
+        # Analytics controls
+        controls_layout = QHBoxLayout()
 
-        # Add title
-        title_label = QLabel("📈 Lottery Data Analytics")
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setFont(QFont("Arial", 16, QFont.Bold))
-        scroll_layout.addWidget(title_label)
+        # Game selector for analytics
+        controls_layout.addWidget(QLabel("Analyze:"))
+        self.analytics_game_selector = QComboBox()
+        self.analytics_game_selector.addItems(["Lotto 6/49", "Lotto Max"])
+        self.analytics_game_selector.currentTextChanged.connect(self.update_analytics_charts)
+        controls_layout.addWidget(self.analytics_game_selector)
 
-        # Add description
-        desc_label = QLabel("Visual analysis of lottery draw patterns and trends")
-        desc_label.setAlignment(Qt.AlignCenter)
-        desc_label.setStyleSheet("color: #666; margin-bottom: 20px;")
-        scroll_layout.addWidget(desc_label)
+        # Refresh button
+        refresh_btn = QPushButton("🔄 Refresh Charts")
+        refresh_btn.clicked.connect(self.update_analytics_charts)
+        controls_layout.addWidget(refresh_btn)
 
-        # Create containers for charts
-        self.freq_chart_container = QWidget()
-        self.freq_chart_layout = QVBoxLayout(self.freq_chart_container)
-        self.freq_chart_label = QLabel("Number Frequency Analysis")
-        self.freq_chart_label.setFont(QFont("Arial", 12, QFont.Bold))
-        self.freq_chart_layout.addWidget(self.freq_chart_label)
+        # Export button
+        export_btn = QPushButton("📊 Export Analytics")
+        export_btn.clicked.connect(self.export_analytics_data)
+        controls_layout.addWidget(export_btn)
 
-        self.trend_chart_container = QWidget()
-        self.trend_chart_layout = QVBoxLayout(self.trend_chart_container)
-        self.trend_chart_label = QLabel("Draw Trend Analysis")
-        self.trend_chart_label.setFont(QFont("Arial", 12, QFont.Bold))
-        self.trend_chart_layout.addWidget(self.trend_chart_label)
+        controls_layout.addStretch()
+        layout.addLayout(controls_layout)
 
-        # Add chart containers to scroll layout
-        scroll_layout.addWidget(self.freq_chart_container)
-        scroll_layout.addWidget(self.trend_chart_container)
+        # Analytics insights summary
+        self.insights_frame = QFrame()
+        self.insights_frame.setFrameStyle(QFrame.Box)
+        self.insights_frame.setStyleSheet("""
+            QFrame {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                padding: 10px;
+                margin: 5px;
+            }
+        """)
 
-        # Add some spacing
-        scroll_layout.addSpacing(20)
+        insights_layout = QHBoxLayout(self.insights_frame)
 
-        # Add a note about data
-        note_label = QLabel("Note: Charts update automatically when you change the selected game")
-        note_label.setStyleSheet("color: #666; font-style: italic;")
-        note_label.setAlignment(Qt.AlignCenter)
-        scroll_layout.addWidget(note_label)
+        self.total_predictions_label = QLabel("📈 Total Predictions: Loading...")
+        insights_layout.addWidget(self.total_predictions_label)
 
-        # Add stretch to push everything to the top
-        scroll_layout.addStretch()
+        self.best_strategy_label = QLabel("🏆 Best Strategy: Loading...")
+        insights_layout.addWidget(self.best_strategy_label)
 
-        # Set the scroll content
-        scroll_area.setWidget(scroll_content)
+        self.win_rate_label = QLabel("🎯 Win Rate: Loading...")
+        insights_layout.addWidget(self.win_rate_label)
 
-        # Add scroll area to main layout
-        layout.addWidget(scroll_area)
+        layout.addWidget(self.insights_frame)
+
+        # Create tab widget for different chart types
+        self.analytics_tabs = QTabWidget()
+
+        # Historical Data Tab
+        self.historical_tab = QWidget()
+        historical_layout = QVBoxLayout(self.historical_tab)
+
+        self.frequency_chart_label = QLabel("Loading number frequency chart...")
+        self.frequency_chart_label.setAlignment(Qt.AlignCenter)
+        self.frequency_chart_label.setMinimumHeight(300)
+        historical_layout.addWidget(self.frequency_chart_label)
+
+        self.trend_chart_label = QLabel("Loading trend analysis chart...")
+        self.trend_chart_label.setAlignment(Qt.AlignCenter)
+        self.trend_chart_label.setMinimumHeight(300)
+        historical_layout.addWidget(self.trend_chart_label)
+
+        self.analytics_tabs.addTab(self.historical_tab, "📊 Historical Data")
+
+        # Prediction Performance Tab
+        self.performance_tab = QWidget()
+        performance_layout = QVBoxLayout(self.performance_tab)
+
+        self.performance_chart_label = QLabel("Loading prediction performance chart...")
+        self.performance_chart_label.setAlignment(Qt.AlignCenter)
+        self.performance_chart_label.setMinimumHeight(300)
+        performance_layout.addWidget(self.performance_chart_label)
+
+        self.strategy_chart_label = QLabel("Loading strategy comparison chart...")
+        self.strategy_chart_label.setAlignment(Qt.AlignCenter)
+        self.strategy_chart_label.setMinimumHeight(300)
+        performance_layout.addWidget(self.strategy_chart_label)
+
+        self.analytics_tabs.addTab(self.performance_tab, "🎯 Prediction Performance")
+
+        layout.addWidget(self.analytics_tabs)
+
+        # Update charts on initial load
+        QTimer.singleShot(500, self.update_analytics_charts)
 
         self.tab_widget.addTab(analytics_widget, "📈 Analytics")
 
-        # Initialize charts
-        self.update_analytics_charts()
-
     def create_predictions_tab(self):
-        """Create predictions interface tab"""
+        """Create enhanced predictions tab with strategy selection"""
         predictions_widget = QWidget()
         layout = QVBoxLayout(predictions_widget)
 
-        # Prediction results section
-        results_group = QGroupBox("🎯 Your Predictions")
-        results_layout = QVBoxLayout(results_group)
+        # Game and Strategy Selection
+        controls_layout = QHBoxLayout()
 
-        self.predictions_text = QTextEdit()
-        self.predictions_text.setMaximumHeight(200)
-        self.predictions_text.setReadOnly(True)
-        self.predictions_text.setPlaceholderText("Click 'Quick Pick' or 'Smart Pick' to generate predictions...")
+        # Game selector (existing)
+        controls_layout.addWidget(QLabel("Game:"))
+        controls_layout.addWidget(self.game_combo)
 
-        results_layout.addWidget(self.predictions_text)
-        layout.addWidget(results_group)
-
-        # Prediction options
-        options_group = QGroupBox("⚙️ Prediction Options")
-        options_layout = QGridLayout(options_group)
-
-        # Strategy selection
-        strategy_label = QLabel("Strategy:")
-        self.strategy_combo = QComboBox()
-        self.strategy_combo.addItems([
+        # Strategy selector (new)
+        controls_layout.addWidget(QLabel("Strategy:"))
+        self.strategy_selector = QComboBox()
+        self.strategy_selector.addItems([
             "Balanced (Recommended)",
-            "Hot Numbers Focus",
-            "Cold Numbers Focus", 
-            "Random Selection"
+            "Hot & Cold Numbers", 
+            "Historical Frequency",
+            "Random Baseline"
         ])
+        self.strategy_selector.setCurrentText("Balanced (Recommended)")
+        controls_layout.addWidget(self.strategy_selector)
 
-        options_layout.addWidget(strategy_label, 0, 0)
-        options_layout.addWidget(self.strategy_combo, 0, 1)
+        controls_layout.addStretch()
+        layout.addLayout(controls_layout)
 
-        # Number of sets
-        sets_label = QLabel("Number of Sets:")
-        self.sets_combo = QComboBox()
-        self.sets_combo.addItems(["1", "2", "3", "5", "10"])
-        self.sets_combo.setCurrentText("3")
+        # Prediction Display Area
+        prediction_frame = QFrame()
+        prediction_frame.setFrameStyle(QFrame.Box)
+        prediction_frame.setStyleSheet("""
+            QFrame {
+                background-color: #f8f9fa;
+                border: 2px solid #dee2e6;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 10px;
+            }
+        """)
 
-        options_layout.addWidget(sets_label, 1, 0)
-        options_layout.addWidget(self.sets_combo, 1, 1)
+        prediction_layout = QVBoxLayout(prediction_frame)
 
-        layout.addWidget(options_group)
-        layout.addStretch()
+        # Confidence display
+        confidence_layout = QHBoxLayout()
+        confidence_layout.addWidget(QLabel("Confidence:"))
+
+        self.confidence_stars = QLabel("⭐⭐⭐⭐⭐")
+        self.confidence_stars.setStyleSheet("font-size: 18px; color: #ffc107;")
+        confidence_layout.addWidget(self.confidence_stars)
+
+        self.confidence_text = QLabel("Excellent (87%)")
+        self.confidence_text.setStyleSheet("font-weight: bold; color: #28a745;")
+        confidence_layout.addWidget(self.confidence_text)
+
+        confidence_layout.addStretch()
+        prediction_layout.addLayout(confidence_layout)
+
+        # Numbers display
+        self.numbers_layout = QHBoxLayout()
+        self.number_labels = []
+
+        for i in range(7):  # Max 7 numbers for Lotto Max
+            label = QLabel("?")
+            label.setAlignment(Qt.AlignCenter)
+            label.setStyleSheet("""
+                QLabel {
+                    background-color: #6c757d;
+                    color: white;
+                    border-radius: 25px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    min-width: 50px;
+                    max-width: 50px;
+                    min-height: 50px;
+                    max-height: 50px;
+                }
+            """)
+            self.number_labels.append(label)
+            self.numbers_layout.addWidget(label)
+
+        self.numbers_layout.addStretch()
+        prediction_layout.addLayout(self.numbers_layout)
+
+        # Strategy info
+        self.strategy_info = QLabel("Select a strategy and click 'Generate Smart Pick' to begin!")
+        self.strategy_info.setStyleSheet("color: #6c757d; font-style: italic; margin: 10px;")
+        self.strategy_info.setWordWrap(True)
+        prediction_layout.addWidget(self.strategy_info)
+
+        layout.addWidget(prediction_frame)
+
+        # Action buttons
+        buttons_layout = QHBoxLayout()
+
+        self.smart_pick_btn = QPushButton("🧠 Generate Smart Pick")
+        self.smart_pick_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #007bff;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                font-size: 16px;
+                font-weight: bold;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;
+            }
+            QPushButton:disabled {
+                background-color: #6c757d;
+            }
+        """)
+        self.smart_pick_btn.clicked.connect(self.generate_prediction)
+        buttons_layout.addWidget(self.smart_pick_btn)
+
+        self.quick_pick_btn = QPushButton("🎲 Quick Pick")
+        self.quick_pick_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                font-size: 16px;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #1e7e34;
+            }
+        """)
+        self.quick_pick_btn.clicked.connect(self.generate_quick_pick)
+        buttons_layout.addWidget(self.quick_pick_btn)
+
+        buttons_layout.addStretch()
+
+        # Export buttons
+        self.copy_btn = QPushButton("📋 Copy Numbers")
+        self.copy_btn.setEnabled(False)
+        self.copy_btn.clicked.connect(self.copy_numbers_to_clipboard)
+        buttons_layout.addWidget(self.copy_btn)
+
+        self.save_btn = QPushButton("💾 Save Prediction")
+        self.save_btn.setEnabled(False)
+        self.save_btn.clicked.connect(self.save_prediction_with_notes)
+        buttons_layout.addWidget(self.save_btn)
+
+        layout.addLayout(buttons_layout)
+
+        # Performance display
+        self.performance_label = QLabel("📈 Performance: Loading...")
+        self.performance_label.setStyleSheet("margin: 10px; font-weight: bold;")
+        layout.addWidget(self.performance_label)
+
+        # Update performance on startup
+        self.update_performance_display()
 
         self.tab_widget.addTab(predictions_widget, "🎯 Predictions")
 
@@ -763,227 +934,366 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.scraper_results_text.append(f"Error: {error_message}")
 
     def update_analytics_charts(self):
-        """Update analytics charts with current game data"""
+        """Update all analytics charts with current data"""
         try:
-            current_game = getattr(self, 'current_game', '649')
+            game_text = self.analytics_game_selector.currentText()
+            game = "649" if "6/49" in game_text else "max"
 
-            # Clear existing charts
-            for i in reversed(range(self.freq_chart_layout.count())):
-                if i > 0:  # Keep the label
-                    widget = self.freq_chart_layout.itemAt(i).widget()
-                    if widget:
-                        widget.setParent(None)
+            # Update insights summary
+            self.update_analytics_insights(game)
 
-            for i in reversed(range(self.trend_chart_layout.count())):
-                if i > 0:  # Keep the label
-                    widget = self.trend_chart_layout.itemAt(i).widget()
-                    if widget:
-                        widget.setParent(None)
+            # Update historical charts
+            self.update_historical_charts(game)
 
-            # Create frequency chart
-            try:
-                freq_fig = self.analytics_engine.plot_number_frequency(current_game)
-                freq_canvas = FigureCanvas(freq_fig)
-                freq_canvas.setMinimumHeight(400)
-                self.freq_chart_layout.addWidget(freq_canvas)
-            except Exception as e:
-                logger.error(f"Error creating frequency chart: {e}")
-                error_label = QLabel(f"Error creating frequency chart: {str(e)}")
-                error_label.setStyleSheet("color: red;")
-                self.freq_chart_layout.addWidget(error_label)
-
-            # Create trend chart
-            try:
-                trend_fig = self.analytics_engine.plot_trend_analysis(current_game)
-                trend_canvas = FigureCanvas(trend_fig)
-                trend_canvas.setMinimumHeight(400)
-                self.trend_chart_layout.addWidget(trend_canvas)
-            except Exception as e:
-                logger.error(f"Error creating trend chart: {e}")
-                error_label = QLabel(f"Error creating trend chart: {str(e)}")
-                error_label.setStyleSheet("color: red;")
-                self.trend_chart_layout.addWidget(error_label)
-
-            # Add a note about the data
-            summary = self.data_manager.get_game_summary(current_game)
-            data_note = QLabel(f"Analysis based on {summary['total_draws']} draws from {summary['date_range']}")
-            data_note.setStyleSheet("color: #666; font-style: italic;")
-            data_note.setAlignment(Qt.AlignCenter)
-            self.trend_chart_layout.addWidget(data_note)
+            # Update prediction performance charts  
+            self.update_performance_charts(game)
 
         except Exception as e:
-            logger.error(f"Error updating analytics charts: {e}")
-            self.status_bar.showMessage(f"Error updating charts: {e}")
+            logger.error(f"Failed to update analytics charts: {e}")
+
+    def update_analytics_insights(self, game: str):
+        """Update the insights summary bar"""
+        try:
+            insights = self.analytics_engine.get_prediction_insights(game)
+
+            self.total_predictions_label.setText(
+                f"📈 Total Predictions: {insights.get('total_predictions', 0)}"
+            )
+
+            best_strategy = insights.get('best_strategy')
+            if best_strategy:
+                self.best_strategy_label.setText(
+                    f"🏆 Best Strategy: {best_strategy['name'].title()} "
+                    f"({best_strategy['win_rate']:.1f}% win rate)"
+                )
+            else:
+                self.best_strategy_label.setText("🏆 Best Strategy: No data yet")
+
+            win_rate = insights.get('overall_win_rate', 0)
+            self.win_rate_label.setText(f"🎯 Overall Win Rate: {win_rate:.1f}%")
+
+        except Exception as e:
+            logger.error(f"Failed to update insights: {e}")
+
+    def update_historical_charts(self, game: str):
+        """Update historical data analysis charts"""
+        try:
+            import io
+            import base64
+            from matplotlib.backends.backend_agg import FigureCanvasAgg
+            import matplotlib.pyplot as plt
+
+            # Generate frequency chart
+            plt.figure(figsize=(10, 6))
+            self.analytics_engine.plot_number_frequency(game)
+
+            # Convert to image for display
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+            buf.seek(0)
+
+            pixmap = QPixmap()
+            pixmap.loadFromData(buf.getvalue())
+
+            self.frequency_chart_label.setPixmap(
+                pixmap.scaled(800, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            )
+            self.frequency_chart_label.setText("")
+
+            plt.close()
+            buf.close()
+
+            # Generate trend chart
+            plt.figure(figsize=(10, 6))
+            self.analytics_engine.plot_trend_analysis(game)
+
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+            buf.seek(0)
+
+            pixmap = QPixmap()
+            pixmap.loadFromData(buf.getvalue())
+
+            self.trend_chart_label.setPixmap(
+                pixmap.scaled(800, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            )
+            self.trend_chart_label.setText("")
+
+            plt.close()
+            buf.close()
+
+        except Exception as e:
+            logger.error(f"Failed to update historical charts: {e}")
+            self.frequency_chart_label.setText(f"Error loading charts: {e}")
+
+    def update_performance_charts(self, game: str):
+        """Update prediction performance charts"""
+        try:
+            import io
+            from matplotlib.backends.backend_agg import FigureCanvasAgg
+            import matplotlib.pyplot as plt
+
+            # Generate prediction performance chart
+            plt.figure(figsize=(10, 6))
+            self.analytics_engine.plot_prediction_performance(game)
+
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+            buf.seek(0)
+
+            pixmap = QPixmap()
+            pixmap.loadFromData(buf.getvalue())
+
+            if not pixmap.isNull():
+                self.performance_chart_label.setPixmap(
+                    pixmap.scaled(800, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                )
+                self.performance_chart_label.setText("")
+            else:
+                self.performance_chart_label.setText("No prediction performance data available yet")
+
+            plt.close()
+            buf.close()
+
+            # Generate strategy comparison chart
+            plt.figure(figsize=(12, 4))
+            self.analytics_engine.plot_strategy_comparison()
+
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+            buf.seek(0)
+
+            pixmap = QPixmap()
+            pixmap.loadFromData(buf.getvalue())
+
+            if not pixmap.isNull():
+                self.strategy_chart_label.setPixmap(
+                    pixmap.scaled(900, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                )
+                self.strategy_chart_label.setText("")
+            else:
+                self.strategy_chart_label.setText("No strategy comparison data available yet")
+
+            plt.close()
+            buf.close()
+
+        except Exception as e:
+            logger.error(f"Failed to update performance charts: {e}")
+            self.performance_chart_label.setText("No prediction data available - make some predictions first!")
+
+    def export_analytics_data(self):
+        """Export analytics data to CSV"""
+        try:
+            from PyQt5.QtWidgets import QFileDialog
+            from tracking.prediction_logger import PredictionLogger
+
+            filename, _ = QFileDialog.getSaveFileName(
+                self, 
+                "Export Analytics Data", 
+                f"analytics_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                "CSV Files (*.csv)"
+            )
+
+            if filename:
+                logger_instance = PredictionLogger()
+                success = logger_instance.export_predictions_csv(filename)
+
+                if success:
+                    from PyQt5.QtWidgets import QMessageBox
+                    QMessageBox.information(self, "Export Complete", f"Analytics data exported to:\n{filename}")
+                else:
+                    QMessageBox.warning(self, "Export Failed", "Failed to export analytics data")
+
+        except Exception as e:
+            logger.error(f"Failed to export analytics: {e}")
+
+    def generate_prediction(self):
+        """Generate smart prediction using selected strategy"""
+        try:
+            # Get current selections
+            game = self.get_current_game_code()
+            strategy_text = self.strategy_selector.currentText()
+            strategy_map = {
+                "Balanced (Recommended)": "balanced",
+                "Hot & Cold Numbers": "hot_cold", 
+                "Historical Frequency": "frequency",
+                "Random Baseline": "random"
+            }
+            strategy = strategy_map.get(strategy_text, "balanced")
+
+            # Show loading state
+            self.smart_pick_btn.setText("🔄 Generating...")
+            self.smart_pick_btn.setEnabled(False)
+            self.strategy_info.setText("Analyzing patterns and generating your smart pick...")
+
+            # Start prediction in worker thread
+            self.prediction_worker = PredictionWorker(self.predictor, game, strategy)
+            self.prediction_worker.prediction_ready.connect(self.on_prediction_ready)
+            self.prediction_worker.error_occurred.connect(self.on_prediction_error)
+            self.prediction_worker.start()
+
+        except Exception as e:
+            self.on_prediction_error(str(e))
+
+    def on_prediction_ready(self, prediction):
+        """Handle successful prediction generation"""
+        try:
+            self.current_prediction = prediction
+
+            # Update numbers display
+            numbers = prediction['numbers']
+            game = prediction['game']
+
+            # Hide extra number labels for 6/49
+            show_count = len(numbers)
+            for i, label in enumerate(self.number_labels):
+                if i < show_count:
+                    label.setText(str(numbers[i]))
+                    label.setStyleSheet("""
+                        QLabel {
+                            background-color: #007bff;
+                            color: white;
+                            border-radius: 25px;
+                            font-size: 18px;
+                            font-weight: bold;
+                            min-width: 50px;
+                            max-width: 50px;
+                            min-height: 50px;
+                            max-height: 50px;
+                        }
+                    """)
+                    label.show()
+                else:
+                    label.hide()
+
+            # Update confidence display
+            stars = "⭐" * prediction['confidence_stars']
+            self.confidence_stars.setText(stars)
+
+            confidence_pct = prediction['confidence'] * 100
+            confidence_label = self.get_confidence_label(prediction['confidence'])
+            self.confidence_text.setText(f"{confidence_label} ({confidence_pct:.0f}%)")
+
+            # Update strategy info
+            strategy_name = prediction['strategy_name']
+            data_count = prediction.get('data_draws_count', 0)
+            self.strategy_info.setText(
+                f"Strategy: {strategy_name} | Based on {data_count} historical draws | "
+                f"Generated at {datetime.now().strftime('%H:%M:%S')}"
+            )
+
+            # Enable action buttons
+            self.copy_btn.setEnabled(True)
+            self.save_btn.setEnabled(True)
+
+            # Log prediction
+            self.prediction_logger.log_prediction(prediction)
+
+            # Update performance display
+            self.update_performance_display()
+
+        except Exception as e:
+            self.on_prediction_error(f"Failed to display prediction: {e}")
+        finally:
+            # Reset button state
+            self.smart_pick_btn.setText("🧠 Generate Smart Pick")
+            self.smart_pick_btn.setEnabled(True)
+
+    def on_prediction_error(self, error_msg):
+        """Handle prediction generation error"""
+        self.strategy_info.setText(f"❌ Error: {error_msg}")
+        self.smart_pick_btn.setText("🧠 Generate Smart Pick")
+        self.smart_pick_btn.setEnabled(True)
+
+        # Show error dialog
+        from PyQt5.QtWidgets import QMessageBox
+        QMessageBox.warning(self, "Prediction Error", f"Failed to generate prediction:\n{error_msg}")
 
     def generate_quick_pick(self):
-        """Generate random number picks"""
-        import random
-        from config import AppConfig
+        """Generate random quick pick"""
+        game = self.get_current_game_code()
+        self.prediction_worker = PredictionWorker(self.predictor, game, "random")
+        self.prediction_worker.prediction_ready.connect(self.on_prediction_ready)
+        self.prediction_worker.error_occurred.connect(self.on_prediction_error)
+        self.prediction_worker.start()
 
-        current_game = getattr(self, 'current_game', '649')
-        num_sets = int(self.sets_combo.currentText())
+    def get_current_game_code(self):
+        """Convert GUI game selection to internal game code"""
+        game_text = self.game_combo.currentText()
+        if "6/49" in game_text:
+            return "649"
+        elif "Max" in game_text:
+            return "max"
+        else:
+            return "649"  # default
 
-        # Get game configuration from centralized AppConfig
-        game_config = AppConfig.get_game_config(current_game)
+    def get_confidence_label(self, confidence):
+        """Convert confidence score to human-readable label"""
+        if confidence >= 0.8:
+            return "Excellent"
+        elif confidence >= 0.6:
+            return "Good"
+        elif confidence >= 0.4:
+            return "Fair"
+        elif confidence >= 0.2:
+            return "Low"
+        else:
+            return "Minimal"
 
-        # Create config dictionary for the algorithm
-        config = {
-            'count': game_config.number_count,
-            'max': game_config.number_max,
-            'bonus_max': game_config.bonus_max or game_config.number_max
-        }
+    def copy_numbers_to_clipboard(self):
+        """Copy current prediction numbers to clipboard"""
+        if self.current_prediction:
+            numbers = self.current_prediction['numbers']
+            numbers_text = " - ".join(map(str, numbers))
 
-        self.predictions_text.clear()
-        self.predictions_text.append(f"🎲 Quick Pick Results for {current_game.upper()}:")
-        self.predictions_text.append("=" * 40)
+            from PyQt5.QtWidgets import QApplication
+            clipboard = QApplication.clipboard()
+            clipboard.setText(numbers_text)
 
-        for i in range(num_sets):
-            # Generate main numbers
-            numbers = sorted(random.sample(range(1, config['max'] + 1), config['count']))
+            # Show feedback
+            self.strategy_info.setText(f"📋 Numbers copied to clipboard: {numbers_text}")
 
-            # Generate bonus number
-            bonus = random.randint(1, config['bonus_max'])
+    def save_prediction_with_notes(self):
+        """Save prediction with optional user notes"""
+        if not self.current_prediction:
+            return
 
-            numbers_str = " - ".join(f"{n:02d}" for n in numbers)
-            self.predictions_text.append(f"Set {i+1}: {numbers_str}  +{bonus:02d}")
+        from PyQt5.QtWidgets import QInputDialog
 
-        self.predictions_text.append("")
-        self.predictions_text.append("💡 These are random selections. Use Smart Pick for data-driven predictions!")
+        notes, ok = QInputDialog.getText(
+            self, 
+            "Save Prediction", 
+            "Add notes (optional):",
+            text=f"Smart pick for {self.current_prediction['game'].upper()}"
+        )
 
-        self.status_bar.showMessage(f"Generated {num_sets} quick pick sets")
+        if ok:
+            self.prediction_logger.log_prediction(self.current_prediction, notes)
+            self.strategy_info.setText("💾 Prediction saved with notes!")
 
-    def generate_smart_pick(self):
-        """Generate data-driven number picks"""
-        current_game = getattr(self, 'current_game', '649')
-        strategy = self.strategy_combo.currentText()
-
+    def update_performance_display(self):
+        """Update the performance display with recent statistics"""
         try:
-            # Check if we have data for this game
-            game_data = self.data_manager.load_game_data(current_game)
+            performance = self.prediction_logger.get_strategy_performance(days=30)
 
-            if game_data.empty:
-                self.predictions_text.clear()
-                self.predictions_text.append(f"❌ No data available for {current_game.upper()}.")
-                self.predictions_text.append("Please try refreshing data or selecting a different game.")
-                self.predictions_text.append("")
-                self.predictions_text.append("💡 Tip: You can use Quick Pick for random selections.")
-                self.status_bar.showMessage(f"No data available for {current_game}")
-                return
+            if performance:
+                total_predictions = sum(p['total_predictions'] for p in performance.values())
+                total_wins = sum(p['wins'] for p in performance.values())
 
-            # Get frequency data
-            frequency_data = self.data_manager.get_number_frequency(current_game)
-
-            if not frequency_data:
-                self.predictions_text.clear()
-                self.predictions_text.append("❌ No historical data available for smart predictions.")
-                self.predictions_text.append("Try Quick Pick instead or update your data.")
-                return
-
-            self.predictions_text.clear()
-            self.predictions_text.append(f"🧠 Smart Pick Results for {current_game.upper()}:")
-            self.predictions_text.append(f"Strategy: {strategy}")
-            self.predictions_text.append("=" * 40)
-
-            # Generate predictions based on strategy
-            predictions = self._generate_smart_predictions(frequency_data, strategy, current_game)
-
-            for i, prediction in enumerate(predictions):
-                numbers_str = " - ".join(f"{n:02d}" for n in prediction['numbers'])
-                confidence = "⭐" * prediction['confidence']
-                self.predictions_text.append(f"Set {i+1}: {numbers_str}  +{prediction['bonus']:02d}  {confidence}")
-
-            self.predictions_text.append("")
-            self.predictions_text.append(f"📊 Based on analysis of {len(frequency_data)} historical draws")
-
-            self.status_bar.showMessage(f"Generated smart predictions using {strategy}")
+                if total_predictions > 0:
+                    overall_win_rate = (total_wins / total_predictions) * 100
+                    self.performance_label.setText(
+                        f"📈 Last 30 days: {total_predictions} predictions, "
+                        f"{total_wins} wins ({overall_win_rate:.1f}% win rate)"
+                    )
+                else:
+                    self.performance_label.setText("📈 No recent predictions to analyze")
+            else:
+                self.performance_label.setText("📈 Performance tracking will begin after first prediction")
 
         except Exception as e:
-            logger.error(f"Error generating smart pick: {e}")
-            self.status_bar.showMessage(f"Error generating predictions: {e}")
-
-            # Provide fallback message
-            self.predictions_text.clear()
-            self.predictions_text.append("⚠️ Error generating smart predictions.")
-            self.predictions_text.append("Please try Quick Pick instead or select a different game.")
-
-    def _generate_smart_predictions(self, frequency_data, strategy, game):
-        """Generate smart predictions based on frequency data"""
-        import random
-        from config import AppConfig
-
-        # Get sorted numbers by frequency
-        sorted_numbers = sorted(frequency_data.items(), key=lambda x: x[1], reverse=True)
-
-        # Get game configuration from centralized AppConfig
-        game_config = AppConfig.get_game_config(game)
-
-        # Create config dictionary for the algorithm
-        config = {
-            'count': game_config.number_count,
-            'max': game_config.number_max
-        }
-        num_sets = int(self.sets_combo.currentText())
-
-        predictions = []
-
-        for _ in range(num_sets):
-            if "Hot Numbers" in strategy:
-                # Focus on most frequent numbers
-                hot_numbers = [num for num, freq in sorted_numbers[:15]]
-                numbers = sorted(random.sample(hot_numbers, min(config['count'], len(hot_numbers))))
-                confidence = 4
-
-            elif "Cold Numbers" in strategy:
-                # Focus on least frequent numbers
-                cold_numbers = [num for num, freq in sorted_numbers[-15:]]
-                numbers = sorted(random.sample(cold_numbers, min(config['count'], len(cold_numbers))))
-                confidence = 2
-
-            else:  # Balanced
-                # Mix of hot, medium, and cold numbers
-                hot_numbers = [num for num, freq in sorted_numbers[:10]]
-                cold_numbers = [num for num, freq in sorted_numbers[-10:]]
-                medium_numbers = [num for num, freq in sorted_numbers[10:-10]]
-
-                # Select 2 hot, 2 cold, rest medium
-                selected = []
-                selected.extend(random.sample(hot_numbers, min(2, len(hot_numbers))))
-                selected.extend(random.sample(cold_numbers, min(2, len(cold_numbers))))
-
-                remaining = config['count'] - len(selected)
-                if remaining > 0 and medium_numbers:
-                    selected.extend(random.sample(medium_numbers, min(remaining, len(medium_numbers))))
-
-                # Fill remaining with any available numbers if needed
-                while len(selected) < config['count']:
-                    available = [i for i in range(1, config['max'] + 1) if i not in selected]
-                    if available:
-                        selected.append(random.choice(available))
-                    else:
-                        break
-
-                numbers = sorted(selected[:config['count']])
-                confidence = 3
-
-            # Ensure we have the right number of numbers
-            while len(numbers) < config['count']:
-                available = [i for i in range(1, config['max'] + 1) if i not in numbers]
-                if available:
-                    numbers.append(random.choice(available))
-                    numbers.sort()
-                else:
-                    break
-
-            # Generate bonus number
-            bonus = random.randint(1, config['max'])
-
-            predictions.append({
-                'numbers': numbers,
-                'bonus': bonus,
-                'confidence': confidence
-            })
-
-        return predictions
+            logger.error(f"Failed to update performance display: {e}")
+            self.performance_label.setText("📈 Performance: Unable to load")
 
 
 def main():

@@ -74,7 +74,7 @@ class LotteryDataManager:
         return data
 
     def _load_from_csv(self, game: str) -> pd.DataFrame:
-        """Load data from CSV files"""
+        """Load data from CSV files with enhanced format handling"""
         # Look for CSV files matching the game
         csv_patterns = [
             f"*{game}*.csv",
@@ -100,7 +100,34 @@ class LotteryDataManager:
         all_data = []
         for csv_file in csv_files:
             try:
+                # Read CSV with converters to handle different formats
                 df = pd.read_csv(csv_file)
+
+                # Process the numbers column if it exists
+                if 'numbers' in df.columns:
+                    # Apply the _parse_numbers function to handle different formats
+                    df['numbers_list'] = df['numbers'].apply(self._parse_numbers)
+
+                # Process date column if it exists
+                if 'date' in df.columns:
+                    # Try to parse dates, but don't fail if some are invalid
+                    try:
+                        df['date_parsed'] = pd.to_datetime(df['date'], errors='coerce')
+
+                        # For rows where date parsing failed, try to use scraped_at as fallback
+                        if 'scraped_at' in df.columns:
+                            mask = df['date_parsed'].isna()
+                            if mask.any():
+                                # Extract date part from scraped_at
+                                df.loc[mask, 'date_parsed'] = pd.to_datetime(
+                                    df.loc[mask, 'scraped_at'].apply(
+                                        lambda x: x.split('T')[0] if isinstance(x, str) and 'T' in x else x
+                                    ), 
+                                    errors='coerce'
+                                )
+                    except Exception as e:
+                        logger.warning(f"Error parsing dates in {csv_file}: {e}")
+
                 all_data.append(df)
                 logger.debug(f"Loaded CSV: {csv_file} ({len(df)} rows)")
             except Exception as e:
@@ -113,11 +140,34 @@ class LotteryDataManager:
         return pd.DataFrame()
 
     def _load_from_sqlite(self, game: str) -> pd.DataFrame:
-        """Load data from SQLite database"""
-        db_files = [f"wclc_{game}.db", f"{game}_results.db", "lottery_data.db"]
+        """Load data from SQLite database with JSON handling"""
+        # Check both data directory and current directory
+        db_files = []
 
-        for db_file in db_files:
-            db_path = os.path.join(self.data_dir, db_file)
+        # Common database filenames
+        db_patterns = [
+            f"wclc_{game}*.db", 
+            f"{game}_results*.db", 
+            "lottery_data.db"
+        ]
+
+        # Search in data directory
+        for pattern in db_patterns:
+            import glob
+            files = glob.glob(os.path.join(self.data_dir, pattern))
+            db_files.extend(files)
+
+        # Also check current directory
+        for pattern in db_patterns:
+            files = glob.glob(pattern)
+            db_files.extend(files)
+
+        if not db_files:
+            logger.debug(f"No SQLite database files found for game {game}")
+            return pd.DataFrame()
+
+        # Try each database file
+        for db_path in db_files:
             if os.path.exists(db_path):
                 try:
                     conn = sqlite3.connect(db_path)
@@ -126,19 +176,54 @@ class LotteryDataManager:
 
                     for table in table_names:
                         try:
-                            query = f"SELECT * FROM {table} WHERE game LIKE '%{game}%' OR game LIKE '%{game.replace('649', '649')}%'"
+                            # Get table schema to check columns
+                            cursor = conn.cursor()
+                            cursor.execute(f"PRAGMA table_info({table})")
+                            columns = cursor.fetchall()
+
+                            if not columns:
+                                continue
+
+                            # Check if table exists and has required columns
+                            query = f"SELECT * FROM {table} WHERE game LIKE '%{game}%' OR game LIKE '%{game.upper()}%'"
                             df = pd.read_sql_query(query, conn)
+
                             if not df.empty:
+                                # Process the numbers column if it exists (convert JSON to list)
+                                if 'numbers' in df.columns:
+                                    import json
+                                    # Parse JSON strings to lists
+                                    df['numbers_list'] = df['numbers'].apply(
+                                        lambda x: self._parse_numbers(x)
+                                    )
+
+                                # Process dates
+                                if 'date' in df.columns:
+                                    df['date_parsed'] = pd.to_datetime(df['date'], errors='coerce')
+
+                                    # Use scraped_at as fallback for missing dates
+                                    if 'scraped_at' in df.columns:
+                                        mask = df['date_parsed'].isna()
+                                        if mask.any():
+                                            df.loc[mask, 'date_parsed'] = pd.to_datetime(
+                                                df.loc[mask, 'scraped_at'].apply(
+                                                    lambda x: x.split('T')[0] if isinstance(x, str) and 'T' in x else x
+                                                ),
+                                                errors='coerce'
+                                            )
+
                                 conn.close()
-                                logger.debug(f"Loaded from SQLite: {db_file}.{table} ({len(df)} rows)")
+                                logger.info(f"Loaded from SQLite: {db_path}.{table} ({len(df)} rows)")
                                 return df
-                        except:
+                        except Exception as e:
+                            logger.warning(f"Error querying table {table} in {db_path}: {e}")
                             continue
 
                     conn.close()
                 except Exception as e:
-                    logger.warning(f"Error loading SQLite {db_file}: {e}")
+                    logger.warning(f"Error loading SQLite {db_path}: {e}")
 
+        logger.warning(f"No valid data found in any SQLite database for game {game}")
         return pd.DataFrame()
 
     def _clean_and_process_data(self, data: pd.DataFrame, game: str) -> pd.DataFrame:
@@ -185,11 +270,65 @@ class LotteryDataManager:
         logger.debug(f"Cleaned data for {game}: {len(df)} draws")
         return df
 
-    def _parse_numbers(self, numbers_str: str) -> List[int]:
-        """Parse number string into list of integers"""
-        # Use the DrawRecord's parse_numbers method for consistency
-        dummy_record = DrawRecord(game="", date="", date_parsed=None, numbers=numbers_str)
-        return dummy_record.numbers
+    def _parse_numbers(self, numbers_data) -> List[int]:
+        """
+        Parse numbers data into list of integers, handling multiple formats
+
+        Args:
+            numbers_data: Could be a list, JSON string, or string representation of a list
+
+        Returns:
+            List of integers
+        """
+        # If already a list, return it (possibly after converting elements to int)
+        if isinstance(numbers_data, list):
+            try:
+                return [int(num) for num in numbers_data]
+            except (ValueError, TypeError):
+                logger.warning(f"Could not convert list elements to integers: {numbers_data}")
+                return []
+
+        # If it's None or empty, return empty list
+        if not numbers_data:
+            return []
+
+        # If it's a string, try different parsing strategies
+        if isinstance(numbers_data, str):
+            # Try JSON parsing first (for SQLite stored data)
+            try:
+                import json
+                parsed_list = json.loads(numbers_data)
+                if isinstance(parsed_list, list):
+                    return [int(num) for num in parsed_list]
+            except (json.JSONDecodeError, ValueError, TypeError):
+                pass
+
+            # Try eval for string representation of list like "[1, 2, 3]"
+            if numbers_data.strip().startswith('[') and numbers_data.strip().endswith(']'):
+                try:
+                    parsed_list = eval(numbers_data)
+                    if isinstance(parsed_list, list):
+                        return [int(num) for num in parsed_list]
+                except (SyntaxError, ValueError, TypeError):
+                    pass
+
+            # Try comma-separated values
+            if ',' in numbers_data:
+                try:
+                    # Remove brackets if present
+                    cleaned = numbers_data.strip('[]() ')
+                    return [int(num.strip()) for num in cleaned.split(',') if num.strip()]
+                except (ValueError, TypeError):
+                    pass
+
+        # If all parsing attempts fail, log warning and use DrawRecord as fallback
+        logger.warning(f"Using fallback parsing for numbers: {numbers_data}")
+        try:
+            dummy_record = DrawRecord(game="", date="", date_parsed=None, numbers=numbers_data)
+            return dummy_record.numbers
+        except Exception as e:
+            logger.error(f"Failed to parse numbers with fallback method: {e}")
+            return []
 
     def get_game_summary(self, game: str) -> Dict:
         """Get summary statistics for a game"""
@@ -286,17 +425,71 @@ class LotteryDataManager:
         from collections import Counter
         return dict(Counter(all_numbers))
 
-    def get_recent_draws(self, game: str, days: int = 30) -> pd.DataFrame:
-        """Get draws from the last N days"""
-        data = self.load_game_data(game)
+    def get_recent_draws(self, game: str, count: int = 10) -> List[Dict]:
+        """
+        Get recent draws with proper data structure
 
-        if 'date_parsed' not in data.columns:
-            return data.head(10)  # Fallback to first 10 draws
+        Args:
+            game: Game type (649, max, etc.)
+            count: Number of recent draws to return
 
-        cutoff_date = datetime.now() - timedelta(days=days)
-        recent = data[data['date_parsed'] > cutoff_date]
+        Returns:
+            List of draw dictionaries
+        """
+        try:
+            # Load game data
+            data = self.load_game_data(game)
 
-        return recent
+            if data.empty:
+                logger.warning(f"No data available for game {game}")
+                return []
+
+            # Get the most recent draws
+            # If date_parsed is available, use it to sort
+            if 'date_parsed' in data.columns and data['date_parsed'].notna().any():
+                data = data.sort_values('date_parsed', ascending=False)
+
+            # Limit to requested count
+            recent_count = min(count, len(data))
+            recent_draws = []
+
+            # Convert to list of dictionaries
+            for i in range(recent_count):
+                row = data.iloc[i]
+
+                # Extract numbers (either from numbers_list or by parsing numbers)
+                if 'numbers_list' in row and row['numbers_list']:
+                    numbers = row['numbers_list']
+                else:
+                    numbers = self._parse_numbers(row.get('numbers', []))
+
+                # Get date (use scraped_at as fallback if date is missing)
+                date = row.get('date', '')
+                if not date and 'scraped_at' in row:
+                    # Extract date part from ISO timestamp
+                    scraped_at = row['scraped_at']
+                    if scraped_at and isinstance(scraped_at, str):
+                        date = scraped_at.split('T')[0]
+
+                draw = {
+                    'numbers': numbers,
+                    'date': date or 'Unknown',
+                    'game': game.upper(),
+                    'draw_index': i
+                }
+
+                # Add bonus if available
+                if 'bonus' in row and row['bonus']:
+                    draw['bonus'] = row['bonus']
+
+                recent_draws.append(draw)
+
+            logger.info(f"Retrieved {len(recent_draws)} recent draws for {game}")
+            return recent_draws
+
+        except Exception as e:
+            logger.error(f"Error getting recent draws for {game}: {e}")
+            return []
 
 
 # Convenience function for GUI

@@ -365,7 +365,7 @@ class WCLCScraper:
 
     def parse_lotto649(self, html: str) -> List[Dict]:
         """
-        Parse Lotto 6/49 draw data with enhanced error handling
+        Parse Lotto 6/49 draw data with enhanced date extraction
 
         Args:
             html (str): HTML content
@@ -402,12 +402,52 @@ class WCLCScraper:
 
         for i, block in enumerate(draw_blocks):
             try:
-                # Get date
+                # Enhanced date extraction with multiple strategies
+                date_text = ""
+
+                # Strategy 1: Look for date using the selector from current selector set
                 date_element = block.select_one(used_selectors['date'])
-                date = date_element.get_text(strip=True) if date_element else ''
+                if date_element:
+                    date_text = date_element.get_text(strip=True)
+
+                # Strategy 2: Look for any date-like text in the block
+                if not date_text:
+                    date_patterns = [
+                        r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}',
+                        r'\d{1,2}[-/]\d{1,2}[-/]\d{4}',
+                        r'\d{4}-\d{2}-\d{2}'
+                    ]
+
+                    block_text = block.get_text()
+                    for pattern in date_patterns:
+                        match = re.search(pattern, block_text, re.IGNORECASE)
+                        if match:
+                            date_text = match.group(0)
+                            break
+
+                # Strategy 3: Extract from nearby text or headers
+                if not date_text:
+                    # Look for date in previous siblings or parent elements
+                    parent = block.find_parent()
+                    if parent:
+                        prev_elements = parent.find_all_previous(['h3', 'h4', 'div'], limit=3)
+                        for elem in prev_elements:
+                            elem_text = elem.get_text(strip=True)
+                            for pattern in date_patterns:
+                                match = re.search(pattern, elem_text, re.IGNORECASE)
+                                if match:
+                                    date_text = match.group(0)
+                                    break
+                            if date_text:
+                                break
 
                 # Clean up date format
-                date = re.sub(r'\s+', ' ', date.strip())
+                date_text = re.sub(r'\s+', ' ', date_text.strip())
+
+                # If still no date, use a fallback with the current date
+                if not date_text:
+                    date_text = f"Unknown-{datetime.now().strftime('%Y%m%d')}-{i}"
+                    logger.warning(f"No date found for block {i}, using fallback: {date_text}")
 
                 # Get main numbers
                 number_elements = block.select(used_selectors['numbers'])
@@ -476,7 +516,7 @@ class WCLCScraper:
 
                 draw_data = {
                     'game': 'Lotto 649',
-                    'date': date,
+                    'date': date_text,
                     'numbers': numbers_int,
                     'bonus': bonus_int,
                     'gold_ball': gold_ball_str,
@@ -487,9 +527,9 @@ class WCLCScraper:
                 # Validate before adding
                 if self._validate_draw_data(draw_data, '649'):
                     draws.append(draw_data)
-                    logger.debug(f"Valid 649 draw added: {date}")
+                    logger.debug(f"Valid 649 draw added: {date_text}")
                 else:
-                    logger.warning(f"Invalid 649 draw data skipped: {date}")
+                    logger.warning(f"Invalid 649 draw data skipped: {date_text}")
 
             except Exception as e:
                 logger.warning(f"Error parsing 649 draw block {i}: {e}")
@@ -1091,25 +1131,58 @@ class WCLCScraper:
             raise WCLCScraperError(f"Error saving to CSV: {e}")
 
     def save_to_sqlite(self, data: List[Dict], db_file: str, table_name: str = 'lottery_draws') -> None:
-        """Save validated data to SQLite database"""
+        """Save lottery data to SQLite database with proper data type handling"""
         if not data:
             logger.warning("No data to save")
             return
 
         try:
-            df = pd.DataFrame(data)
-
-            # Create/connect to database
             conn = sqlite3.connect(db_file)
+            cursor = conn.cursor()
 
-            # Save to database (append mode)
-            df.to_sql(table_name, conn, if_exists='append', index=False)
+            # Create table with proper schema
+            cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    game TEXT NOT NULL,
+                    date TEXT,
+                    numbers TEXT NOT NULL,  -- JSON string, not list
+                    bonus TEXT,
+                    gold_ball TEXT,
+                    scraped_at TEXT,
+                    source_block_index INTEGER
+                )
+            """)
 
-            conn.close()
-            logger.info(f"Saved {len(data)} records to SQLite database: {db_file}")
+            # Convert data for database insertion
+            for record in data:
+                # Convert numbers list to JSON string for database storage
+                import json
+                numbers_json = json.dumps(record.get('numbers', []))
+
+                cursor.execute(f"""
+                    INSERT INTO {table_name} 
+                    (game, date, numbers, bonus, gold_ball, scraped_at, source_block_index)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    record.get('game', ''),
+                    record.get('date', ''),
+                    numbers_json,  # Store as JSON string
+                    str(record.get('bonus', '')),
+                    str(record.get('gold_ball', '')),
+                    record.get('scraped_at', ''),
+                    record.get('source_block_index', 0)
+                ))
+
+            conn.commit()
+            logger.info(f"Successfully saved {len(data)} records to SQLite: {db_file}")
 
         except Exception as e:
-            raise WCLCScraperError(f"Error saving to SQLite: {e}")
+            logger.error(f"Error saving to SQLite: {e}")
+            raise WCLCScraperError(f"Failed to save to SQLite: {e}")
+        finally:
+            if 'conn' in locals():
+                conn.close()
 
 
 def run_scraper():
