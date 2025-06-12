@@ -6,13 +6,13 @@ Statistical evaluation of prediction performance with Wilson score confidence in
 Determines if smart predictions beat random guessing in a statistically meaningful way.
 
 Features:
-- SciPy optional dependency with pure-Python fallback
+- Pure Python implementation of statistical functions (no SciPy dependency)
 - Wilson score confidence intervals (robust for small samples)
 - JSON-serializable results for GUI integration
 - Support for Lotto 6/49 and Lotto Max
 
 Author: Saskatoon Lotto Predictor Team
-Version: 1.0.0
+Version: 1.1.0
 """
 
 from __future__ import annotations
@@ -28,22 +28,79 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────
-# SciPy Optional Import with Graceful Fallback
+# Pure Python Implementation of Statistical Functions
 # ─────────────────────────────────────────────────────────────────
-try:
-    from scipy.stats import norm
-    SCIPY_AVAILABLE = True
-    logger.debug("SciPy available for advanced statistical functions")
-except ImportError:
-    SCIPY_AVAILABLE = False
-    logger.warning("SciPy not available - using pure Python fallback for z-scores")
+
+def norm_ppf(p: float) -> float:
+    """
+    Pure Python implementation of the percent point function (inverse of CDF)
+    for the standard normal distribution.
+
+    This is equivalent to scipy.stats.norm.ppf() but doesn't require SciPy.
+
+    Args:
+        p: Probability (0 < p < 1)
+
+    Returns:
+        Corresponding z-score
+
+    Implementation based on Abramowitz and Stegun approximation 26.2.23.
+    Accuracy: |error| < 4.5e-4
+    """
+    if p <= 0 or p >= 1:
+        raise ValueError("Probability must be between 0 and 1")
+
+    # Handle special case for p = 0.5
+    if p == 0.5:
+        return 0.0
+
+    # For numerical stability, handle extreme values
+    if p < 1e-10:
+        return -8.0  # Approximate for very small p
+    if p > 1 - 1e-10:
+        return 8.0   # Approximate for p very close to 1
+
+    # Coefficients for the approximation
+    c0 = 2.515517
+    c1 = 0.802853
+    c2 = 0.010328
+    d1 = 1.432788
+    d2 = 0.189269
+    d3 = 0.001308
+
+    # Determine if we're in the lower or upper tail
+    if p <= 0.5:
+        q = p
+        sign = -1.0
+    else:
+        q = 1.0 - p
+        sign = 1.0
+
+    # Calculate intermediate value
+    t = math.sqrt(-2.0 * math.log(q))
+
+    # Apply approximation formula
+    z = t - (c0 + c1 * t + c2 * t**2) / (1.0 + d1 * t + d2 * t**2 + d3 * t**3)
+
+    return sign * z
 
 # Pre-computed z-scores for common confidence levels
 Z_SCORE_TABLE = {
+    0.50: 0.000,
+    0.75: 1.150,
+    0.80: 1.282,
+    0.85: 1.440,
     0.90: 1.645,
-    0.95: 1.96,
+    0.95: 1.960,
+    0.96: 2.054,
+    0.97: 2.170,
+    0.98: 2.326,
     0.99: 2.576,
-    0.999: 3.291
+    0.995: 2.807,
+    0.998: 3.090,
+    0.999: 3.291,
+    0.9995: 3.481,
+    0.9999: 3.891
 }
 
 class GameType(str, Enum):
@@ -145,21 +202,32 @@ class PredictionMetrics:
         self.z_score = self._get_z_score(confidence_level)
 
     def _get_z_score(self, confidence_level: float) -> float:
-        """Get z-score for confidence level with SciPy fallback"""
-        # Try lookup table first
+        """
+        Get z-score for confidence level using pure Python implementation.
+
+        This method uses two approaches in order:
+        1. Look up the exact confidence level in Z_SCORE_TABLE (fastest)
+        2. Calculate using pure Python norm_ppf implementation (accurate)
+
+        No external dependencies required.
+        """
+        # Try lookup table first (fastest)
         if confidence_level in Z_SCORE_TABLE:
             return Z_SCORE_TABLE[confidence_level]
 
-        # Use SciPy if available
-        if SCIPY_AVAILABLE:
-            try:
-                return float(norm.ppf((1 + confidence_level) / 2))
-            except Exception as e:
-                logger.warning(f"SciPy z-score calculation failed: {e}")
+        # Calculate using pure Python implementation
+        try:
+            # Convert confidence level to two-tailed probability
+            p = (1 + confidence_level) / 2
+            return float(norm_ppf(p))
+        except Exception as e:
+            logger.warning(f"Z-score calculation failed: {e}")
 
-        # Default fallback
-        logger.warning(f"Using default z=1.96 for confidence level {confidence_level}")
-        return 1.96
+            # Fall back to closest lookup value if calculation fails
+            closest_level = min(Z_SCORE_TABLE.keys(), key=lambda x: abs(x - confidence_level))
+            closest_z = Z_SCORE_TABLE[closest_level]
+            logger.warning(f"Using closest z-score {closest_z} (for {closest_level}) instead of exact value for {confidence_level}")
+            return closest_z
 
     @lru_cache(maxsize=128)
     def count_matches(self, predicted_tuple: Tuple[int, ...], actual_tuple: Tuple[int, ...]) -> int:

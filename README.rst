@@ -119,6 +119,7 @@ Advanced Features
 * **Multi-game Support**: Handles multiple lottery game formats
 * **Batch Historical Scraping**: Retrieves and processes complete historical datasets
 * **Smart Predictions**: Data-driven prediction algorithms with confidence scoring
+* **Pure Python Statistics**: Statistical functions implemented in pure Python with no external dependencies
 * **Adaptive Rate Limiting**: Intelligent throttling for respectful web scraping
 * **Centralized Configuration**: Single source of truth for all application settings
 * **Standardized Logging**: Consistent logging across all modules
@@ -133,16 +134,42 @@ Installation
     git clone https://github.com/Matuxy79/OttolPredictor.git
     cd OttolPredictor
 
-2. Create and activate a virtual environment (recommended)::
+.. note::
+   Python 3.11 and higher (including 3.13) is fully supported. The code now uses a pure Python
+   implementation of statistical functions with no external dependencies, ensuring consistent
+   behavior across all Python versions.
 
-    python -m venv .venv
+Option 1: Using pip (Standard Python)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Create and activate a virtual environment with Python 3.11 or higher::
+
+    py -3.13 -m venv .venv  # For Python 3.13
+    # OR
+    py -3.12 -m venv .venv  # For Python 3.12
+    # OR
+    py -3.11 -m venv .venv  # For Python 3.11
     .venv\Scripts\activate  # On Windows
 
-3. Install the required dependencies::
+2. Install the required dependencies::
 
     pip install -r requirements.txt
 
-4. Verify your installation::
+3. Verify your installation::
+
+    python verify_install.py
+
+Option 2: Using Conda (Alternative installation method)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Install Miniconda or Anaconda if you haven't already
+
+2. Create and activate the conda environment::
+
+    conda env create -f environment.yml
+    conda activate ottolpredictor
+
+3. Verify your installation::
 
     python verify_install.py
 
@@ -161,22 +188,43 @@ CLI Mode
 
 For command-line batch operations::
 
-    python wclc_scraper.py --game <game_type> [options]
+    python main.py --game <game_type> --batch [options]
+
+Supported Games:
+- 649: Lotto 6/49
+- max: Lotto Max
+- western649: Western 649
+- westernmax: Western Max
+- dailygrand: Daily Grand
 
 Examples:
 
-1. Scrape current month only::
+1. Scrape Lotto 6/49 data for the last month and save to CSV::
 
-    python wclc_scraper.py --game 649 --output results.csv
+    python main.py --game 649 --batch --max-months 1 --format csv
 
-2. Scrape all available history::
+2. Scrape Lotto Max data for the last 3 months and save to CSV::
 
-    python wclc_scraper.py --game 649 --batch --output complete_649_history.csv
+    python main.py --game max --batch --max-months 3 --format csv
 
-3. Scrape last 6 months::
+3. Scrape Western 649 complete history and save to CSV::
 
-    python wclc_scraper.py --game max --batch --max-months 6 --format both
+    python main.py --game western649 --batch --format csv
+
+4. Scrape Western Max data for the last 6 months and save to both CSV and SQLite::
+
+    python main.py --game westernmax --batch --max-months 6 --format both
+
+5. Scrape Daily Grand data and save to SQLite::
+
+    python main.py --game dailygrand --batch --format sqlite
+
+Key Parameters:
+- --batch: Enable batch scraping of historical data
+- --max-months: Maximum number of months to scrape (default: all available)
+- --format: Output format (csv, sqlite, or both)
+- --output: Custom output filename (default: auto-generated)
 
 For more options, run::
 
-    python wclc_scraper.py --help
+    python main.py --help

@@ -8,17 +8,108 @@ import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, 
                             QWidget, QTabWidget, QLabel, QPushButton, QTableWidget,
                             QTableWidgetItem, QComboBox, QTextEdit, QGroupBox,
-                            QGridLayout, QProgressBar, QStatusBar, QSplitter)
-from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
+                            QGridLayout, QProgressBar, QStatusBar, QSplitter,
+                            QScrollArea)
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QRunnable, QThreadPool, QObject
 from PyQt5.QtGui import QFont, QIcon, QPalette, QColor
+
+# For matplotlib integration
+import matplotlib
+matplotlib.use('Qt5Agg')
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from data_manager import get_data_manager
 from logging_config import get_logger
+from analytics import get_analytics_engine
+from wclc_scraper import WCLCScraper
+from config import AppConfig
 
 logger = get_logger(__name__)
+
+# Worker thread for scraping
+class ScraperSignals(QObject):
+    """Signals for scraper worker thread"""
+    started = pyqtSignal()
+    finished = pyqtSignal(bool, str)  # Success flag, result message
+    progress = pyqtSignal(int, str)   # Progress value, status message
+    error = pyqtSignal(str)           # Error message
+
+class ScraperWorker(QRunnable):
+    """Worker thread for running the scraper"""
+
+    def __init__(self, game, batch=False, max_months=None, output_format='csv'):
+        """Initialize the worker thread"""
+        super().__init__()
+        self.game = game
+        self.batch = batch
+        self.max_months = max_months
+        self.output_format = output_format
+        self.signals = ScraperSignals()
+
+    def run(self):
+        """Run the scraper in a background thread"""
+        try:
+            self.signals.started.emit()
+            self.signals.progress.emit(0, f"Starting scraper for {self.game}...")
+
+            # Initialize scraper
+            scraper = WCLCScraper(max_retries=3, timeout=15)
+
+            # Get URL for the game
+            url = scraper.get_game_url(self.game)
+            self.signals.progress.emit(10, f"Got URL for {self.game}: {url}")
+
+            # Scrape data
+            if self.batch:
+                self.signals.progress.emit(20, f"Starting batch scrape for {self.game} ({self.max_months} months)...")
+                data = scraper.scrape_batch_history(url, self.game, self.max_months)
+            else:
+                self.signals.progress.emit(20, f"Scraping current page for {self.game}...")
+                html = scraper.fetch_html_with_retry(url)
+                data = scraper._parse_draws_by_game(html, self.game)
+
+            if not data:
+                self.signals.error.emit(f"No data found for {self.game}")
+                self.signals.finished.emit(False, f"No data found for {self.game}")
+                return
+
+            self.signals.progress.emit(70, f"Scraped {len(data)} draws for {self.game}")
+
+            # Generate output filename
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            batch_suffix = "_batch" if self.batch else ""
+
+            if self.output_format == 'csv':
+                output_file = f"wclc_{self.game}_results{batch_suffix}_{timestamp}.csv"
+                scraper.save_to_csv(data, output_file)
+                self.signals.progress.emit(90, f"Saved data to {output_file}")
+                result_message = f"Successfully scraped {len(data)} draws for {self.game} and saved to {output_file}"
+            elif self.output_format == 'sqlite':
+                output_file = f"wclc_{self.game}_results{batch_suffix}_{timestamp}.db"
+                scraper.save_to_sqlite(data, output_file)
+                self.signals.progress.emit(90, f"Saved data to {output_file}")
+                result_message = f"Successfully scraped {len(data)} draws for {self.game} and saved to {output_file}"
+            elif self.output_format == 'both':
+                csv_file = f"wclc_{self.game}_results{batch_suffix}_{timestamp}.csv"
+                db_file = f"wclc_{self.game}_results{batch_suffix}_{timestamp}.db"
+                scraper.save_to_csv(data, csv_file)
+                scraper.save_to_sqlite(data, db_file)
+                self.signals.progress.emit(90, f"Saved data to {csv_file} and {db_file}")
+                result_message = f"Successfully scraped {len(data)} draws for {self.game} and saved to {csv_file} and {db_file}"
+
+            self.signals.progress.emit(100, "Done!")
+            self.signals.finished.emit(True, result_message)
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.signals.error.emit(str(e))
+            self.signals.finished.emit(False, f"Error: {str(e)}")
 
 class SaskatoonLottoPredictor(QMainWindow):
     """Main application window"""
@@ -26,6 +117,8 @@ class SaskatoonLottoPredictor(QMainWindow):
     def __init__(self):
         super().__init__()
         self.data_manager = get_data_manager()
+        self.analytics_engine = get_analytics_engine()
+        self.thread_pool = QThreadPool()
         self.init_ui()
         self.load_initial_data()
 
@@ -145,6 +238,9 @@ class SaskatoonLottoPredictor(QMainWindow):
         # Predictions tab
         self.create_predictions_tab()
 
+        # Scraping tab
+        self.create_scraping_tab()
+
         parent_layout.addWidget(self.tab_widget)
 
     def create_dashboard_tab(self):
@@ -221,15 +317,63 @@ class SaskatoonLottoPredictor(QMainWindow):
         analytics_widget = QWidget()
         layout = QVBoxLayout(analytics_widget)
 
-        # Placeholder for future charts
-        placeholder_label = QLabel("📈 Analytics Charts Coming Soon!")
-        placeholder_label.setAlignment(Qt.AlignCenter)
-        placeholder_label.setFont(QFont("Arial", 16))
-        placeholder_label.setStyleSheet("color: #666; padding: 50px;")
+        # Create a scroll area for the charts
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
 
-        layout.addWidget(placeholder_label)
+        # Add title
+        title_label = QLabel("📈 Lottery Data Analytics")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setFont(QFont("Arial", 16, QFont.Bold))
+        scroll_layout.addWidget(title_label)
+
+        # Add description
+        desc_label = QLabel("Visual analysis of lottery draw patterns and trends")
+        desc_label.setAlignment(Qt.AlignCenter)
+        desc_label.setStyleSheet("color: #666; margin-bottom: 20px;")
+        scroll_layout.addWidget(desc_label)
+
+        # Create containers for charts
+        self.freq_chart_container = QWidget()
+        self.freq_chart_layout = QVBoxLayout(self.freq_chart_container)
+        self.freq_chart_label = QLabel("Number Frequency Analysis")
+        self.freq_chart_label.setFont(QFont("Arial", 12, QFont.Bold))
+        self.freq_chart_layout.addWidget(self.freq_chart_label)
+
+        self.trend_chart_container = QWidget()
+        self.trend_chart_layout = QVBoxLayout(self.trend_chart_container)
+        self.trend_chart_label = QLabel("Draw Trend Analysis")
+        self.trend_chart_label.setFont(QFont("Arial", 12, QFont.Bold))
+        self.trend_chart_layout.addWidget(self.trend_chart_label)
+
+        # Add chart containers to scroll layout
+        scroll_layout.addWidget(self.freq_chart_container)
+        scroll_layout.addWidget(self.trend_chart_container)
+
+        # Add some spacing
+        scroll_layout.addSpacing(20)
+
+        # Add a note about data
+        note_label = QLabel("Note: Charts update automatically when you change the selected game")
+        note_label.setStyleSheet("color: #666; font-style: italic;")
+        note_label.setAlignment(Qt.AlignCenter)
+        scroll_layout.addWidget(note_label)
+
+        # Add stretch to push everything to the top
+        scroll_layout.addStretch()
+
+        # Set the scroll content
+        scroll_area.setWidget(scroll_content)
+
+        # Add scroll area to main layout
+        layout.addWidget(scroll_area)
 
         self.tab_widget.addTab(analytics_widget, "📈 Analytics")
+
+        # Initialize charts
+        self.update_analytics_charts()
 
     def create_predictions_tab(self):
         """Create predictions interface tab"""
@@ -279,6 +423,107 @@ class SaskatoonLottoPredictor(QMainWindow):
 
         self.tab_widget.addTab(predictions_widget, "🎯 Predictions")
 
+    def create_scraping_tab(self):
+        """Create data scraping interface tab"""
+        scraping_widget = QWidget()
+        layout = QVBoxLayout(scraping_widget)
+
+        # Title and description
+        title_label = QLabel("🔄 Lottery Data Scraper")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setFont(QFont("Arial", 16, QFont.Bold))
+        layout.addWidget(title_label)
+
+        desc_label = QLabel("Scrape lottery data from the WCLC website")
+        desc_label.setAlignment(Qt.AlignCenter)
+        desc_label.setStyleSheet("color: #666; margin-bottom: 20px;")
+        layout.addWidget(desc_label)
+
+        # Configuration options
+        config_group = QGroupBox("⚙️ Scraper Configuration")
+        config_layout = QGridLayout(config_group)
+
+        # Game selection
+        game_label = QLabel("Game:")
+        self.scraper_game_combo = QComboBox()
+
+        # Add all supported games with their display names
+        for game_code in AppConfig.get_supported_games():
+            display_name = AppConfig.get_game_display_name(game_code)
+            self.scraper_game_combo.addItem(display_name, game_code)
+
+        config_layout.addWidget(game_label, 0, 0)
+        config_layout.addWidget(self.scraper_game_combo, 0, 1)
+
+        # Batch mode
+        self.batch_checkbox = QPushButton("Batch Mode (Historical Data)")
+        self.batch_checkbox.setCheckable(True)
+        self.batch_checkbox.setChecked(True)
+        self.batch_checkbox.clicked.connect(self.toggle_batch_mode)
+        config_layout.addWidget(self.batch_checkbox, 1, 0, 1, 2)
+
+        # Months selection (only visible in batch mode)
+        months_label = QLabel("Months to Scrape:")
+        self.months_combo = QComboBox()
+        self.months_combo.addItems(["1", "3", "6", "12", "All Available"])
+        self.months_combo.setCurrentText("6")
+
+        config_layout.addWidget(months_label, 2, 0)
+        config_layout.addWidget(self.months_combo, 2, 1)
+
+        # Output format
+        format_label = QLabel("Output Format:")
+        self.format_combo = QComboBox()
+        self.format_combo.addItems(["CSV", "SQLite Database", "Both"])
+
+        config_layout.addWidget(format_label, 3, 0)
+        config_layout.addWidget(self.format_combo, 3, 1)
+
+        layout.addWidget(config_group)
+
+        # Progress section
+        progress_group = QGroupBox("📊 Scraping Progress")
+        progress_layout = QVBoxLayout(progress_group)
+
+        self.scraper_progress_bar = QProgressBar()
+        self.scraper_progress_bar.setRange(0, 100)
+        self.scraper_progress_bar.setValue(0)
+        progress_layout.addWidget(self.scraper_progress_bar)
+
+        self.scraper_status_label = QLabel("Ready to scrape")
+        self.scraper_status_label.setAlignment(Qt.AlignCenter)
+        progress_layout.addWidget(self.scraper_status_label)
+
+        layout.addWidget(progress_group)
+
+        # Results section
+        results_group = QGroupBox("📋 Results")
+        results_layout = QVBoxLayout(results_group)
+
+        self.scraper_results_text = QTextEdit()
+        self.scraper_results_text.setReadOnly(True)
+        self.scraper_results_text.setPlaceholderText("Scraping results will appear here...")
+        results_layout.addWidget(self.scraper_results_text)
+
+        layout.addWidget(results_group)
+
+        # Action buttons
+        buttons_layout = QHBoxLayout()
+
+        self.start_scraper_btn = QPushButton("Start Scraping")
+        self.start_scraper_btn.clicked.connect(self.run_scraper)
+        buttons_layout.addWidget(self.start_scraper_btn)
+
+        self.refresh_after_scrape_btn = QPushButton("Refresh Data After Scraping")
+        self.refresh_after_scrape_btn.setCheckable(True)
+        self.refresh_after_scrape_btn.setChecked(True)
+        buttons_layout.addWidget(self.refresh_after_scrape_btn)
+
+        layout.addLayout(buttons_layout)
+
+        # Add the tab
+        self.tab_widget.addTab(scraping_widget, "🔄 Data Scraper")
+
     def create_status_bar(self):
         """Create status bar"""
         self.status_bar = QStatusBar()
@@ -312,6 +557,7 @@ class SaskatoonLottoPredictor(QMainWindow):
         # Update all displays
         self.update_dashboard()
         self.update_recent_draws_table()
+        self.update_analytics_charts()
 
     def update_dashboard(self):
         """Update dashboard with current game data"""
@@ -324,23 +570,40 @@ class SaskatoonLottoPredictor(QMainWindow):
             self.date_range_label.setText(f"Date Range: {summary['date_range']}")
             self.last_updated_label.setText(f"Last Updated: {summary['last_updated']}")
 
-            # Update hot/cold numbers
-            hot_nums = ", ".join(map(str, summary['most_frequent_numbers'][:6]))
-            cold_nums = ", ".join(map(str, summary['least_frequent_numbers'][:6]))
+            # Update hot/cold numbers with safe access
+            hot_nums = "No data"
+            cold_nums = "No data"
 
-            self.hot_numbers_label.setText(hot_nums or "No data")
-            self.cold_numbers_label.setText(cold_nums or "No data")
+            if 'most_frequent_numbers' in summary and summary['most_frequent_numbers']:
+                hot_nums = ", ".join(map(str, summary['most_frequent_numbers'][:6]))
+
+            if 'least_frequent_numbers' in summary and summary['least_frequent_numbers']:
+                cold_nums = ", ".join(map(str, summary['least_frequent_numbers'][:6]))
+
+            self.hot_numbers_label.setText(hot_nums)
+            self.cold_numbers_label.setText(cold_nums)
 
             # Update recent activity
             self.recent_activity_text.clear()
             self.recent_activity_text.append(f"📊 Loaded {summary['total_draws']} draws for {current_game.upper()}")
-            self.recent_activity_text.append(f"🔥 Hot numbers: {hot_nums}")
-            self.recent_activity_text.append(f"❄️ Cold numbers: {cold_nums}")
-            self.recent_activity_text.append(f"📅 Recent draws (30 days): {summary['recent_draws']}")
+
+            if summary['total_draws'] > 0:
+                self.recent_activity_text.append(f"🔥 Hot numbers: {hot_nums}")
+                self.recent_activity_text.append(f"❄️ Cold numbers: {cold_nums}")
+                self.recent_activity_text.append(f"📅 Recent draws (30 days): {summary.get('recent_draws', 0)}")
+            else:
+                self.recent_activity_text.append("⚠️ No data available for this game.")
+                self.recent_activity_text.append("Try refreshing data or selecting a different game.")
 
         except Exception as e:
             logger.error(f"Error updating dashboard: {e}")
             self.status_bar.showMessage(f"Error loading data: {e}")
+
+            # Set default values in case of error
+            self.hot_numbers_label.setText("No data")
+            self.cold_numbers_label.setText("No data")
+            self.recent_activity_text.clear()
+            self.recent_activity_text.append("⚠️ Error loading data. Please try refreshing.")
 
     def update_recent_draws_table(self):
         """Update the recent draws table"""
@@ -389,11 +652,168 @@ class SaskatoonLottoPredictor(QMainWindow):
             self.data_manager.refresh_all_data()
             self.update_dashboard()
             self.update_recent_draws_table()
+            self.update_analytics_charts()
             self.status_bar.showMessage("Data refreshed successfully")
         except Exception as e:
             self.status_bar.showMessage(f"Error refreshing data: {e}")
         finally:
             self.progress_bar.setVisible(False)
+
+    def toggle_batch_mode(self, checked):
+        """Toggle visibility of batch mode options"""
+        # Show/hide months selection based on batch mode
+        self.months_combo.setEnabled(checked)
+
+    def run_scraper(self):
+        """Run the scraper in a background thread"""
+        # Get configuration from UI
+        game_index = self.scraper_game_combo.currentIndex()
+        game_code = self.scraper_game_combo.itemData(game_index)
+        game_name = self.scraper_game_combo.currentText()
+
+        batch_mode = self.batch_checkbox.isChecked()
+
+        # Get months to scrape (if in batch mode)
+        max_months = None
+        if batch_mode:
+            months_text = self.months_combo.currentText()
+            if months_text != "All Available":
+                max_months = int(months_text)
+
+        # Get output format
+        format_text = self.format_combo.currentText()
+        if format_text == "CSV":
+            output_format = "csv"
+        elif format_text == "SQLite Database":
+            output_format = "sqlite"
+        else:  # Both
+            output_format = "both"
+
+        # Disable UI elements during scraping
+        self.start_scraper_btn.setEnabled(False)
+        self.scraper_game_combo.setEnabled(False)
+        self.batch_checkbox.setEnabled(False)
+        self.months_combo.setEnabled(False)
+        self.format_combo.setEnabled(False)
+
+        # Reset progress and status
+        self.scraper_progress_bar.setValue(0)
+        self.scraper_status_label.setText("Starting scraper...")
+        self.scraper_results_text.clear()
+        self.scraper_results_text.append(f"Starting scraper for {game_name}...")
+        if batch_mode:
+            months_desc = f"{max_months} months" if max_months else "all available months"
+            self.scraper_results_text.append(f"Batch mode enabled, scraping {months_desc}")
+        else:
+            self.scraper_results_text.append("Scraping current month only")
+        self.scraper_results_text.append(f"Output format: {format_text}")
+        self.scraper_results_text.append("-----------------------------------")
+
+        # Create and run worker thread
+        worker = ScraperWorker(game_code, batch_mode, max_months, output_format)
+
+        # Connect signals
+        worker.signals.started.connect(self.on_scraper_started)
+        worker.signals.progress.connect(self.on_scraper_progress)
+        worker.signals.finished.connect(self.on_scraper_finished)
+        worker.signals.error.connect(self.on_scraper_error)
+
+        # Start the worker thread
+        self.thread_pool.start(worker)
+
+    def on_scraper_started(self):
+        """Handle scraper started signal"""
+        self.status_bar.showMessage("Scraper started")
+
+    def on_scraper_progress(self, value, message):
+        """Handle scraper progress signal"""
+        self.scraper_progress_bar.setValue(value)
+        self.scraper_status_label.setText(message)
+        self.scraper_results_text.append(message)
+
+    def on_scraper_finished(self, success, message):
+        """Handle scraper finished signal"""
+        # Re-enable UI elements
+        self.start_scraper_btn.setEnabled(True)
+        self.scraper_game_combo.setEnabled(True)
+        self.batch_checkbox.setEnabled(True)
+        self.months_combo.setEnabled(self.batch_checkbox.isChecked())
+        self.format_combo.setEnabled(True)
+
+        # Update status
+        if success:
+            self.scraper_status_label.setText("Scraping completed successfully")
+            self.scraper_results_text.append("-----------------------------------")
+            self.scraper_results_text.append("✅ " + message)
+            self.status_bar.showMessage("Scraping completed successfully")
+
+            # Refresh data if requested
+            if self.refresh_after_scrape_btn.isChecked():
+                self.scraper_results_text.append("Refreshing data...")
+                self.refresh_data()
+                self.scraper_results_text.append("Data refreshed successfully")
+        else:
+            self.scraper_status_label.setText("Scraping failed")
+            self.scraper_results_text.append("-----------------------------------")
+            self.scraper_results_text.append("❌ " + message)
+            self.status_bar.showMessage("Scraping failed: " + message)
+
+    def on_scraper_error(self, error_message):
+        """Handle scraper error signal"""
+        self.scraper_results_text.append(f"Error: {error_message}")
+
+    def update_analytics_charts(self):
+        """Update analytics charts with current game data"""
+        try:
+            current_game = getattr(self, 'current_game', '649')
+
+            # Clear existing charts
+            for i in reversed(range(self.freq_chart_layout.count())):
+                if i > 0:  # Keep the label
+                    widget = self.freq_chart_layout.itemAt(i).widget()
+                    if widget:
+                        widget.setParent(None)
+
+            for i in reversed(range(self.trend_chart_layout.count())):
+                if i > 0:  # Keep the label
+                    widget = self.trend_chart_layout.itemAt(i).widget()
+                    if widget:
+                        widget.setParent(None)
+
+            # Create frequency chart
+            try:
+                freq_fig = self.analytics_engine.plot_number_frequency(current_game)
+                freq_canvas = FigureCanvas(freq_fig)
+                freq_canvas.setMinimumHeight(400)
+                self.freq_chart_layout.addWidget(freq_canvas)
+            except Exception as e:
+                logger.error(f"Error creating frequency chart: {e}")
+                error_label = QLabel(f"Error creating frequency chart: {str(e)}")
+                error_label.setStyleSheet("color: red;")
+                self.freq_chart_layout.addWidget(error_label)
+
+            # Create trend chart
+            try:
+                trend_fig = self.analytics_engine.plot_trend_analysis(current_game)
+                trend_canvas = FigureCanvas(trend_fig)
+                trend_canvas.setMinimumHeight(400)
+                self.trend_chart_layout.addWidget(trend_canvas)
+            except Exception as e:
+                logger.error(f"Error creating trend chart: {e}")
+                error_label = QLabel(f"Error creating trend chart: {str(e)}")
+                error_label.setStyleSheet("color: red;")
+                self.trend_chart_layout.addWidget(error_label)
+
+            # Add a note about the data
+            summary = self.data_manager.get_game_summary(current_game)
+            data_note = QLabel(f"Analysis based on {summary['total_draws']} draws from {summary['date_range']}")
+            data_note.setStyleSheet("color: #666; font-style: italic;")
+            data_note.setAlignment(Qt.AlignCenter)
+            self.trend_chart_layout.addWidget(data_note)
+
+        except Exception as e:
+            logger.error(f"Error updating analytics charts: {e}")
+            self.status_bar.showMessage(f"Error updating charts: {e}")
 
     def generate_quick_pick(self):
         """Generate random number picks"""
@@ -438,6 +858,19 @@ class SaskatoonLottoPredictor(QMainWindow):
         strategy = self.strategy_combo.currentText()
 
         try:
+            # Check if we have data for this game
+            game_data = self.data_manager.load_game_data(current_game)
+
+            if game_data.empty:
+                self.predictions_text.clear()
+                self.predictions_text.append(f"❌ No data available for {current_game.upper()}.")
+                self.predictions_text.append("Please try refreshing data or selecting a different game.")
+                self.predictions_text.append("")
+                self.predictions_text.append("💡 Tip: You can use Quick Pick for random selections.")
+                self.status_bar.showMessage(f"No data available for {current_game}")
+                return
+
+            # Get frequency data
             frequency_data = self.data_manager.get_number_frequency(current_game)
 
             if not frequency_data:
@@ -467,6 +900,11 @@ class SaskatoonLottoPredictor(QMainWindow):
         except Exception as e:
             logger.error(f"Error generating smart pick: {e}")
             self.status_bar.showMessage(f"Error generating predictions: {e}")
+
+            # Provide fallback message
+            self.predictions_text.clear()
+            self.predictions_text.append("⚠️ Error generating smart predictions.")
+            self.predictions_text.append("Please try Quick Pick instead or select a different game.")
 
     def _generate_smart_predictions(self, frequency_data, strategy, game):
         """Generate smart predictions based on frequency data"""

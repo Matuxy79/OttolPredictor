@@ -20,55 +20,55 @@ class LotteryAnalytics:
     """
     Provides statistical analysis and visualization for lottery data
     """
-    
+
     def __init__(self):
         """Initialize the analytics engine"""
         self.data_manager = get_data_manager()
-    
+
     def analyze_number_frequency(self, game: str) -> Dict[int, int]:
         """
         Analyze the frequency of each number in a game's history
-        
+
         Args:
             game: Game type (649, max, etc.)
-            
+
         Returns:
             Dictionary mapping numbers to their frequency counts
         """
         return self.data_manager.get_number_frequency(game)
-    
+
     def get_number_pairs(self, game: str) -> Dict[Tuple[int, int], int]:
         """
         Find frequently occurring number pairs
-        
+
         Args:
             game: Game type (649, max, etc.)
-            
+
         Returns:
             Dictionary mapping number pairs to their frequency counts
         """
         data = self.data_manager.load_game_data(game)
         pairs = {}
-        
+
         for numbers_list in data['numbers_list']:
             if len(numbers_list) < 2:
                 continue
-                
+
             # Generate all possible pairs from the draw
             for i in range(len(numbers_list)):
                 for j in range(i+1, len(numbers_list)):
                     pair = (numbers_list[i], numbers_list[j])
                     pairs[pair] = pairs.get(pair, 0) + 1
-        
+
         return pairs
-    
+
     def analyze_draw_patterns(self, game: str) -> Dict:
         """
         Analyze patterns in draws (odd/even distribution, high/low, etc.)
-        
+
         Args:
             game: Game type (649, max, etc.)
-            
+
         Returns:
             Dictionary with pattern analysis results
         """
@@ -79,33 +79,132 @@ class LotteryAnalytics:
             'sum_distribution': [],
             'range_distribution': []
         }
-        
+
         # Placeholder for future implementation
         logger.info(f"Analyzing patterns for {game} with {len(data)} draws")
-        
+
         return patterns
-    
-    def plot_number_frequency(self, game: str, save_path: Optional[str] = None) -> None:
+
+    def plot_number_frequency(self, game: str, save_path: Optional[str] = None) -> plt.Figure:
         """
         Plot the frequency of each number in a game's history
-        
+
         Args:
             game: Game type (649, max, etc.)
             save_path: Optional path to save the plot image
+
+        Returns:
+            matplotlib Figure object
         """
-        # Placeholder for future implementation
         logger.info(f"Plotting number frequency for {game}")
-    
-    def plot_trend_analysis(self, game: str, save_path: Optional[str] = None) -> None:
+
+        # Get frequency data
+        frequency_data = self.analyze_number_frequency(game)
+
+        # Sort by number
+        numbers = sorted(frequency_data.keys())
+        frequencies = [frequency_data[num] for num in numbers]
+
+        # Create figure and axis
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Create bar chart
+        bars = ax.bar(numbers, frequencies, color='skyblue')
+
+        # Highlight top 6 most frequent numbers
+        sorted_freq = sorted(frequency_data.items(), key=lambda x: x[1], reverse=True)
+        top_numbers = [item[0] for item in sorted_freq[:6]]
+
+        for bar, num in zip(bars, numbers):
+            if num in top_numbers:
+                bar.set_color('orange')
+
+        # Add labels and title
+        ax.set_xlabel('Number')
+        ax.set_ylabel('Frequency')
+        ax.set_title(f'Number Frequency for {game.upper()}')
+
+        # Add grid
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+        # Ensure x-axis shows all numbers
+        ax.set_xticks(numbers)
+
+        # Save if requested
+        if save_path:
+            plt.savefig(save_path)
+
+        return fig
+
+    def plot_trend_analysis(self, game: str, save_path: Optional[str] = None) -> plt.Figure:
         """
         Plot trends in lottery draws over time
-        
+
         Args:
             game: Game type (649, max, etc.)
             save_path: Optional path to save the plot image
+
+        Returns:
+            matplotlib Figure object
         """
-        # Placeholder for future implementation
         logger.info(f"Plotting trend analysis for {game}")
+
+        # Get game data
+        data = self.data_manager.load_game_data(game)
+
+        if len(data) < 2:
+            # Not enough data for trend analysis
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.text(0.5, 0.5, "Not enough data for trend analysis", 
+                   horizontalalignment='center', verticalalignment='center',
+                   transform=ax.transAxes, fontsize=14)
+            return fig
+
+        # Calculate sum of numbers for each draw
+        data['sum'] = data['numbers_list'].apply(lambda x: sum(x) if x else 0)
+
+        # Sort by date
+        data = data.sort_values('date')
+
+        # Create figure and axis
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Plot trend line
+        ax.plot(range(len(data)), data['sum'], marker='o', linestyle='-', color='blue', alpha=0.7)
+
+        # Add moving average
+        window = min(10, len(data) // 2) if len(data) > 5 else 2
+        if window > 1:
+            data['moving_avg'] = data['sum'].rolling(window=window).mean()
+            ax.plot(range(len(data)), data['moving_avg'], color='red', linewidth=2, 
+                   label=f'{window}-draw Moving Average')
+            ax.legend()
+
+        # Add labels and title
+        ax.set_xlabel('Draw Number')
+        ax.set_ylabel('Sum of Numbers')
+        ax.set_title(f'Number Sum Trend for {game.upper()}')
+
+        # Add grid
+        ax.grid(linestyle='--', alpha=0.7)
+
+        # Set x-ticks to show every 5th draw
+        step = max(len(data) // 10, 1)
+        ax.set_xticks(range(0, len(data), step))
+
+        # If we have dates, use them for x-axis labels
+        if 'date' in data.columns:
+            date_labels = data.iloc[::step]['date'].tolist()
+            ax.set_xticklabels(date_labels, rotation=45, ha='right')
+
+        # Adjust layout
+        plt.tight_layout()
+
+        # Save if requested
+        if save_path:
+            plt.savefig(save_path)
+
+        return fig
 
 
 # Convenience function

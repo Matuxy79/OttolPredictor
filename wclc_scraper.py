@@ -1,6 +1,27 @@
 """
 Saskatchewan Lotto Scraper - WCLC Integration with Batch Historical Scraping
 Multi-game lottery data extraction with robust error handling and complete history
+
+Note on HTML Structure Handling:
+The scraper is designed to handle different HTML structures across WCLC game pages.
+Some pages use class-based selectors (e.g., 'li.pastWinNumber'), while others use plain <li> elements.
+Each parse_* method includes a fallback mechanism that:
+1. First tries the class-based selector (for pages that do use it)
+2. If that returns empty, then grabs all <li>s under the block and handles them appropriately
+This ensures the scraper works across all draw-based games on the WCLC site, even when they
+omit CSS classes in their HTML structure.
+
+Note on Deduplication:
+The scraper includes robust deduplication to avoid duplicate draws when scraping historical data.
+The create_draw_fingerprint method creates a unique fingerprint for each draw based on the game,
+date, and numbers. The _normalize_numbers helper method ensures consistent fingerprints regardless
+of how the numbers are represented (list, comma-separated string, etc.).
+
+Pagination Support:
+The scraper supports full historical data extraction by following month navigation links.
+The extract_month_links method extracts links to previous months' data, and the scrape_batch_history
+method follows these links to scrape all available historical data. Use the max_months parameter
+to limit the number of months to scrape.
 """
 
 import argparse
@@ -158,7 +179,8 @@ class WCLCScraper:
 
         # Look for month navigation links in the pastWinNumMonths table
         selectors_to_try = [
-            'a.pastMonthYearWinners[rel]',  # Primary selector
+            'a.pastMonthYearWinners[rel]',  # Primary selector from issue description
+            'a.pastMonthYearWinners',       # Same class without rel attribute
             'a[rel*="back="]',              # Alternative: any link with back parameter
             '.pastWinNumMonths a[rel]',     # Links within month table
             '.month-nav a[rel]',            # Alternative month navigation
@@ -184,11 +206,19 @@ class WCLCScraper:
         # Extract rel or href URLs and convert to absolute URLs
         for link in found_links:
             # Try rel attribute first, then href if rel is not available
-            rel_url = link.get('rel') or link.get('href')
+            rel_url = None
 
-            # BeautifulSoup may return rel as a list, extract first item
-            if isinstance(rel_url, list):
-                rel_url = rel_url[0] if rel_url else None
+            # Handle rel attribute which could be a list or string
+            rel_attr = link.get('rel')
+            if rel_attr:
+                if isinstance(rel_attr, list):
+                    rel_url = rel_attr[0] if rel_attr else None
+                else:
+                    rel_url = rel_attr
+
+            # If no rel, try href
+            if not rel_url:
+                rel_url = link.get('href')
 
             if rel_url:
                 # Handle relative URLs
@@ -235,8 +265,39 @@ class WCLCScraper:
         # Normalize date (remove extra whitespace)
         date_normalized = re.sub(r'\s+', ' ', date.strip())
 
-        fingerprint = f"{game}|{date_normalized}|{numbers}"
+        # Normalize numbers to a consistent format
+        numbers_normalized = self._normalize_numbers(numbers)
+
+        fingerprint = f"{game}|{date_normalized}|{numbers_normalized}"
         return fingerprint
+
+    def _normalize_numbers(self, numbers) -> str:
+        """Normalize numbers to a consistent format for fingerprinting"""
+        # If numbers is already a string, try to parse it
+        if isinstance(numbers, str):
+            # If it looks like a list representation, eval it
+            if numbers.startswith('[') and numbers.endswith(']'):
+                try:
+                    numbers = eval(numbers)
+                except:
+                    pass
+            # If it's a comma-separated string, split it
+            elif ',' in numbers:
+                try:
+                    numbers = [int(n.strip()) for n in numbers.split(',')]
+                except:
+                    pass
+
+        # If numbers is a list, sort it and join with commas
+        if isinstance(numbers, list):
+            try:
+                numbers = sorted([int(n) for n in numbers])
+                return ','.join(map(str, numbers))
+            except:
+                pass
+
+        # If all else fails, return the original as a string
+        return str(numbers)
 
     def read_html(self, file_path: str) -> str:
         """
@@ -279,6 +340,15 @@ class WCLCScraper:
             bool: True if data is valid
         """
         try:
+            # Ensure numbers are integers
+            if 'numbers' in draw_data and isinstance(draw_data['numbers'], list):
+                draw_data['numbers'] = [int(num) if isinstance(num, str) else num for num in draw_data['numbers']]
+
+            # Ensure bonus is an integer
+            if 'bonus' in draw_data and draw_data['bonus'] is not None:
+                if isinstance(draw_data['bonus'], str):
+                    draw_data['bonus'] = int(draw_data['bonus'])
+
             # Use the DataValidator from schema module
             errors = DataValidator.validate_draw_record(draw_data, game_type)
 
@@ -308,10 +378,11 @@ class WCLCScraper:
 
         # Multiple possible selectors for robustness
         selectors_to_try = [
-            {'blocks': 'div.pastWinNum', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus'},
-            {'blocks': 'div.draw-result', 'date': '.draw-date', 'numbers': '.winning-number', 'bonus': '.bonus-number'},
-            {'blocks': 'div.winning-numbers', 'date': '.date', 'numbers': '.number', 'bonus': '.bonus'},
-            {'blocks': 'tr.draw-row', 'date': 'td.date', 'numbers': 'td.number', 'bonus': 'td.bonus'}
+            {'blocks': 'div.pastWinNumGroup', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus', 'gold_ball': 'div.pastWinNumGPDNumber'},
+            {'blocks': 'div.pastWinNum', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus', 'gold_ball': 'div.pastWinNumGPDNumber'},
+            {'blocks': 'div.draw-result', 'date': '.draw-date', 'numbers': '.winning-number', 'bonus': '.bonus-number', 'gold_ball': '.gold-ball-number'},
+            {'blocks': 'div.winning-numbers', 'date': '.date', 'numbers': '.number', 'bonus': '.bonus', 'gold_ball': '.gold-ball'},
+            {'blocks': 'tr.draw-row', 'date': 'td.date', 'numbers': 'td.number', 'bonus': 'td.bonus', 'gold_ball': 'td.gold-ball'}
         ]
 
         draw_blocks = []
@@ -340,6 +411,16 @@ class WCLCScraper:
 
                 # Get main numbers
                 number_elements = block.select(used_selectors['numbers'])
+
+                # Fallback for pages where <li> has no class
+                if not number_elements:
+                    # collect all <li> then drop the last one (the bonus)
+                    all_lis = block.select('ul li')
+                    # if at least 7 lis (6 numbers + bonus)
+                    if len(all_lis) >= 7:
+                        # first 6 are main numbers
+                        number_elements = all_lis[:-1]
+
                 numbers = []
                 for elem in number_elements:
                     num_text = elem.get_text(strip=True)
@@ -351,30 +432,54 @@ class WCLCScraper:
                 # Get bonus number
                 bonus = ''
                 bonus_element = block.select_one(used_selectors['bonus'])
+
+                # Fallback for pages where bonus <li> has no class
+                if not bonus_element:
+                    lis = block.select('ul li')
+                    if lis:
+                        bonus_element = lis[-1]  # Last <li> is typically the bonus
+
                 if bonus_element:
                     bonus_text = bonus_element.get_text(strip=True)
+                    # Remove "Bonus" text if present
+                    bonus_text = bonus_text.replace("Bonus", "").strip()
                     bonus_match = re.search(r'\d+', bonus_text)
                     if bonus_match:
                         bonus = bonus_match.group()
 
                 # Get Gold Ball if present (649-specific)
                 gold_ball = ''
-                gold_selectors = ['li.pastWinNumberGold', '.gold-ball', '.gold-number']
-                for selector in gold_selectors:
-                    gold_element = block.select_one(selector)
-                    if gold_element:
-                        gold_text = gold_element.get_text(strip=True)
-                        gold_match = re.search(r'\d+', gold_text)
-                        if gold_match:
-                            gold_ball = gold_match.group()
+                # Try the selector from the current selector set
+                gold_element = block.select_one(used_selectors.get('gold_ball', ''))
+
+                if not gold_element:
+                    # Try alternative selectors
+                    gold_selectors = ['div.pastWinNumGPDNumber', 'li.pastWinNumberGold', '.gold-ball', '.gold-number']
+                    for selector in gold_selectors:
+                        gold_element = block.select_one(selector)
+                        if gold_element:
                             break
+
+                if gold_element:
+                    gold_text = gold_element.get_text(strip=True)
+                    # Try to extract a number pattern (could be formatted as "44890771-01")
+                    gold_match = re.search(r'[\d-]+', gold_text)
+                    if gold_match:
+                        gold_ball = gold_match.group()
+
+                # Convert numbers and bonus to integers
+                numbers_int = [int(num) for num in numbers]
+                bonus_int = int(bonus) if bonus else None
+
+                # Gold ball might be a formatted string like "44890771-01", so we keep it as a string
+                gold_ball_str = gold_ball if gold_ball else None
 
                 draw_data = {
                     'game': 'Lotto 649',
                     'date': date,
-                    'numbers': ','.join(numbers),
-                    'bonus': bonus,
-                    'gold_ball': gold_ball,
+                    'numbers': numbers_int,
+                    'bonus': bonus_int,
+                    'gold_ball': gold_ball_str,
                     'scraped_at': datetime.now().isoformat(),
                     'source_block_index': i
                 }
@@ -408,6 +513,7 @@ class WCLCScraper:
 
         # Lotto Max specific selectors
         selectors_to_try = [
+            {'blocks': 'div.pastWinNumGroup', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus'},
             {'blocks': 'div.pastWinNum', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus'},
             {'blocks': 'div.lottomax-draw', 'date': '.draw-date', 'numbers': '.winning-number', 'bonus': '.bonus-number'},
             {'blocks': 'div.max-result', 'date': '.date', 'numbers': '.number', 'bonus': '.bonus'}
@@ -436,6 +542,16 @@ class WCLCScraper:
 
                 # Get main numbers (Lotto Max has 7)
                 number_elements = block.select(used_selectors['numbers'])
+
+                # Fallback for pages where <li> has no class
+                if not number_elements:
+                    # collect all <li> then drop the last one (the bonus)
+                    all_lis = block.select('ul li')
+                    # if at least 8 lis (7 numbers + bonus)
+                    if len(all_lis) >= 8:
+                        # first 7 are main numbers
+                        number_elements = all_lis[:-1]
+
                 numbers = []
                 for elem in number_elements:
                     num_text = elem.get_text(strip=True)
@@ -443,21 +559,34 @@ class WCLCScraper:
                     if num_match:
                         numbers.append(num_match.group())
 
-                # Get bonus number
+                # Get bonus number (class-based or fallback to last <li>)
                 bonus = ''
                 bonus_element = block.select_one(used_selectors['bonus'])
+
+                # Fallback for pages where bonus <li> has no class
+                if not bonus_element:
+                    lis = block.select('ul li')
+                    if lis:
+                        bonus_element = lis[-1]  # Last <li> is typically the bonus
+
                 if bonus_element:
                     bonus_text = bonus_element.get_text(strip=True)
+                    # Remove "Bonus" text if present
+                    bonus_text = bonus_text.replace("Bonus", "").strip()
                     bonus_match = re.search(r'\d+', bonus_text)
                     if bonus_match:
                         bonus = bonus_match.group()
 
+                # Convert numbers and bonus to integers
+                numbers_int = [int(num) for num in numbers]
+                bonus_int = int(bonus) if bonus else None
+
                 draw_data = {
                     'game': 'Lotto Max',
                     'date': date,
-                    'numbers': ','.join(numbers),
-                    'bonus': bonus,
-                    'gold_ball': '',  # Lotto Max doesn't have Gold Ball
+                    'numbers': numbers_int,
+                    'bonus': bonus_int,
+                    'gold_ball': None,  # Lotto Max doesn't have Gold Ball
                     'scraped_at': datetime.now().isoformat(),
                     'source_block_index': i
                 }
@@ -491,6 +620,7 @@ class WCLCScraper:
 
         # Western 649 specific selectors (similar to regular 649 but may have different CSS)
         selectors_to_try = [
+            {'blocks': 'div.pastWinNumGroup', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus'},
             {'blocks': 'div.pastWinNum', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus'},
             {'blocks': 'div.western649-draw', 'date': '.draw-date', 'numbers': '.winning-number', 'bonus': '.bonus-number'},
             {'blocks': 'div.western-result', 'date': '.date', 'numbers': '.number', 'bonus': '.bonus'}
@@ -519,6 +649,16 @@ class WCLCScraper:
 
                 # Get main numbers
                 number_elements = block.select(used_selectors['numbers'])
+
+                # Fallback for pages where <li> has no class
+                if not number_elements:
+                    # collect all <li> then drop the last one (the bonus)
+                    all_lis = block.select('ul li')
+                    # if at least 7 lis (6 numbers + bonus)
+                    if len(all_lis) >= 7:
+                        # first 6 are main numbers
+                        number_elements = all_lis[:-1]
+
                 numbers = []
                 for elem in number_elements:
                     num_text = elem.get_text(strip=True)
@@ -529,18 +669,31 @@ class WCLCScraper:
                 # Get bonus number
                 bonus = ''
                 bonus_element = block.select_one(used_selectors['bonus'])
+
+                # Fallback for pages where bonus <li> has no class
+                if not bonus_element:
+                    lis = block.select('ul li')
+                    if lis:
+                        bonus_element = lis[-1]  # Last <li> is typically the bonus
+
                 if bonus_element:
                     bonus_text = bonus_element.get_text(strip=True)
+                    # Remove "Bonus" text if present
+                    bonus_text = bonus_text.replace("Bonus", "").strip()
                     bonus_match = re.search(r'\d+', bonus_text)
                     if bonus_match:
                         bonus = bonus_match.group()
 
+                # Convert numbers and bonus to integers
+                numbers_int = [int(num) for num in numbers]
+                bonus_int = int(bonus) if bonus else None
+
                 draw_data = {
                     'game': 'Western 649',
                     'date': date,
-                    'numbers': ','.join(numbers),
-                    'bonus': bonus,
-                    'gold_ball': '',  # Western 649 typically doesn't have Gold Ball
+                    'numbers': numbers_int,
+                    'bonus': bonus_int,
+                    'gold_ball': None,  # Western 649 typically doesn't have Gold Ball
                     'scraped_at': datetime.now().isoformat(),
                     'source_block_index': i
                 }
@@ -574,6 +727,7 @@ class WCLCScraper:
 
         # Western Max specific selectors (similar to Lotto Max)
         selectors_to_try = [
+            {'blocks': 'div.pastWinNumGroup', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus'},
             {'blocks': 'div.pastWinNum', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus'},
             {'blocks': 'div.westernmax-draw', 'date': '.draw-date', 'numbers': '.winning-number', 'bonus': '.bonus-number'},
             {'blocks': 'div.western-max-result', 'date': '.date', 'numbers': '.number', 'bonus': '.bonus'}
@@ -600,6 +754,16 @@ class WCLCScraper:
                 date = re.sub(r'\s+', ' ', date.strip())
 
                 number_elements = block.select(used_selectors['numbers'])
+
+                # Fallback for pages where <li> has no class
+                if not number_elements:
+                    # collect all <li> then drop the last one (the bonus)
+                    all_lis = block.select('ul li')
+                    # if at least 8 lis (7 numbers + bonus)
+                    if len(all_lis) >= 8:
+                        # first 7 are main numbers
+                        number_elements = all_lis[:-1]
+
                 numbers = []
                 for elem in number_elements:
                     num_text = elem.get_text(strip=True)
@@ -609,18 +773,31 @@ class WCLCScraper:
 
                 bonus = ''
                 bonus_element = block.select_one(used_selectors['bonus'])
+
+                # Fallback for pages where bonus <li> has no class
+                if not bonus_element:
+                    lis = block.select('ul li')
+                    if lis:
+                        bonus_element = lis[-1]  # Last <li> is typically the bonus
+
                 if bonus_element:
                     bonus_text = bonus_element.get_text(strip=True)
+                    # Remove "Bonus" text if present
+                    bonus_text = bonus_text.replace("Bonus", "").strip()
                     bonus_match = re.search(r'\d+', bonus_text)
                     if bonus_match:
                         bonus = bonus_match.group()
 
+                # Convert numbers and bonus to integers
+                numbers_int = [int(num) for num in numbers]
+                bonus_int = int(bonus) if bonus else None
+
                 draw_data = {
                     'game': 'Western Max',
                     'date': date,
-                    'numbers': ','.join(numbers),
-                    'bonus': bonus,
-                    'gold_ball': '',
+                    'numbers': numbers_int,
+                    'bonus': bonus_int,
+                    'gold_ball': None,
                     'scraped_at': datetime.now().isoformat(),
                     'source_block_index': i
                 }
@@ -653,6 +830,7 @@ class WCLCScraper:
 
         # Daily Grand specific selectors
         selectors_to_try = [
+            {'blocks': 'div.pastWinNumGroup', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus'},
             {'blocks': 'div.pastWinNum', 'date': 'div.pastWinNumDate', 'numbers': 'li.pastWinNumber', 'bonus': 'li.pastWinNumberBonus'},
             {'blocks': 'div.dailygrand-draw', 'date': '.draw-date', 'numbers': '.winning-number', 'bonus': '.bonus-number'},
             {'blocks': 'div.daily-grand-result', 'date': '.date', 'numbers': '.number', 'bonus': '.bonus'}
@@ -679,6 +857,16 @@ class WCLCScraper:
                 date = re.sub(r'\s+', ' ', date.strip())
 
                 number_elements = block.select(used_selectors['numbers'])
+
+                # Fallback for pages where <li> has no class
+                if not number_elements:
+                    # collect all <li> then drop the last one (the bonus/grand number)
+                    all_lis = block.select('ul li')
+                    # if at least 6 lis (5 numbers + grand number)
+                    if len(all_lis) >= 6:
+                        # first 5 are main numbers
+                        number_elements = all_lis[:-1]
+
                 numbers = []
                 for elem in number_elements:
                     num_text = elem.get_text(strip=True)
@@ -688,18 +876,33 @@ class WCLCScraper:
 
                 bonus = ''
                 bonus_element = block.select_one(used_selectors['bonus'])
+
+                # Fallback for pages where bonus <li> has no class
+                if not bonus_element:
+                    lis = block.select('ul li')
+                    if lis:
+                        bonus_element = lis[-1]  # Last <li> is typically the Grand Number
+
                 if bonus_element:
                     bonus_text = bonus_element.get_text(strip=True)
+                    # Remove "Bonus" text if present
+                    bonus_text = bonus_text.replace("Bonus", "").strip()
+                    # Also remove "Grand Number" text if present
+                    bonus_text = bonus_text.replace("Grand Number", "").strip()
                     bonus_match = re.search(r'\d+', bonus_text)
                     if bonus_match:
                         bonus = bonus_match.group()
 
+                # Convert numbers and bonus to integers
+                numbers_int = [int(num) for num in numbers]
+                bonus_int = int(bonus) if bonus else None
+
                 draw_data = {
                     'game': 'Daily Grand',
                     'date': date,
-                    'numbers': ','.join(numbers),
-                    'bonus': bonus,
-                    'gold_ball': '',
+                    'numbers': numbers_int,
+                    'bonus': bonus_int,
+                    'gold_ball': None,
                     'scraped_at': datetime.now().isoformat(),
                     'source_block_index': i
                 }

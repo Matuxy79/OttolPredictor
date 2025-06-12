@@ -195,23 +195,30 @@ class LotteryDataManager:
         """Get summary statistics for a game"""
         data = self.load_game_data(game)
 
-        if data.empty:
-            return {
-                'game': game,
-                'total_draws': 0,
-                'date_range': 'No data',
-                'last_updated': 'Never'
-            }
-
+        # Create a complete summary dictionary with default values
         summary = {
             'game': game,
+            'total_draws': 0,
+            'date_range': 'No data',
+            'last_updated': 'Never',
+            'most_frequent_numbers': [],
+            'least_frequent_numbers': [],
+            'recent_draws': 0
+        }
+
+        if data.empty:
+            logger.info(f"Returning empty summary for game: {game}")
+            return summary
+
+        # Update summary with actual data
+        summary.update({
             'total_draws': len(data),
             'date_range': self._get_date_range(data),
             'last_updated': self._get_last_updated(data),
             'most_frequent_numbers': self._get_hot_numbers(data, top_n=6),
             'least_frequent_numbers': self._get_cold_numbers(data, top_n=6),
             'recent_draws': len(data[data['date_parsed'] > datetime.now() - timedelta(days=30)]) if 'date_parsed' in data.columns else 0
-        }
+        })
 
         return summary
 

@@ -1,0 +1,15 @@
+name: ottolpredictor
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.12  # Or 3.11
+  - beautifulsoup4>=4.9.0
+  - requests>=2.25.0
+  - lxml>=4.6.0
+  - pandas>=1.2.0
+  - numpy>=1.19.0
+  - matplotlib>=3.3.0
+  - pip
+  - pip:
+    - PyQt5>=5.15.0  # PyQt5 is often better installed via pip even in conda environments
