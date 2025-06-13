@@ -23,17 +23,13 @@ from matplotlib.figure import Figure
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from data_manager import get_data_manager
 from logging_config import get_logger
 from analytics import get_analytics_engine
 from wclc_scraper import WCLCScraper
 from config import AppConfig
+from predictor import SmartPredictor
 from tracking.prediction_logger import PredictionLogger
-
-# Import new modules
-from core.data_manager import get_data_manager
-from core.predictor import LottoPredictor
-from strategies.adaptive_selector import AdaptiveStrategySelector
-from gui.strategy_dashboard import StrategyDashboard
 import json
 
 logger = get_logger(__name__)
@@ -52,11 +48,9 @@ class PredictionWorker(QThread):
 
     def run(self):
         try:
-            # Use the new predictor's predict_numbers method
-            prediction = self.predictor.predict_numbers(self.game, self.strategy)
+            prediction = self.predictor.generate_prediction(self.game, self.strategy)
             self.prediction_ready.emit(prediction)
         except Exception as e:
-            logger.error(f"Prediction error: {e}")
             self.error_occurred.emit(str(e))
 
 # Worker thread for scraping
@@ -149,11 +143,9 @@ class SaskatoonLottoPredictor(QMainWindow):
         # Initialize prediction components
         self.data_manager = get_data_manager()
         self.analytics_engine = get_analytics_engine()
-        self.predictor = LottoPredictor()  # Use new predictor
-        self.strategy_selector = AdaptiveStrategySelector()  # Add strategy selector
+        self.predictor = SmartPredictor(self.data_manager)
         self.prediction_logger = PredictionLogger()
         self.current_prediction = None
-        self.current_strategy = 'auto'  # Default to auto strategy selection
 
         self.thread_pool = QThreadPool()
         self.init_ui()
@@ -240,14 +232,8 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.game_combo.currentTextChanged.connect(self.on_game_changed)
 
         # Quick action buttons
-        self.refresh_btn = QPushButton("🔄 Smart Refresh")
-        self.refresh_btn.setToolTip("Quickly refresh recent data only")
-        self.refresh_btn.clicked.connect(lambda: self.refresh_data(full_refresh=False))
-
-        # Add full refresh button
-        self.full_refresh_btn = QPushButton("🔄 Full Refresh")
-        self.full_refresh_btn.setToolTip("Perform complete refresh of all data (slower)")
-        self.full_refresh_btn.clicked.connect(lambda: self.refresh_data(full_refresh=True))
+        self.refresh_btn = QPushButton("🔄 Refresh Data")
+        self.refresh_btn.clicked.connect(self.refresh_data)
 
         self.quick_pick_btn = QPushButton("🎲 Quick Pick")
         self.quick_pick_btn.clicked.connect(self.generate_quick_pick)
@@ -260,7 +246,6 @@ class SaskatoonLottoPredictor(QMainWindow):
         toolbar_layout.addWidget(self.game_combo)
         toolbar_layout.addStretch()
         toolbar_layout.addWidget(self.refresh_btn)
-        toolbar_layout.addWidget(self.full_refresh_btn)
         toolbar_layout.addWidget(self.quick_pick_btn)
         toolbar_layout.addWidget(self.smart_pick_btn)
 
@@ -281,9 +266,6 @@ class SaskatoonLottoPredictor(QMainWindow):
 
         # Predictions tab
         self.create_predictions_tab()
-
-        # Strategy Dashboard tab (new)
-        self.create_strategy_dashboard_tab()
 
         # Scraping tab
         self.create_scraping_tab()
@@ -514,23 +496,17 @@ class SaskatoonLottoPredictor(QMainWindow):
         controls_layout.addWidget(QLabel("Game:"))
         controls_layout.addWidget(self.game_combo)
 
-        # Strategy selector (enhanced with new strategies)
+        # Strategy selector (new)
         controls_layout.addWidget(QLabel("Strategy:"))
-        self.strategy_selector_combo = QComboBox()
-
-        # Add strategies from the strategy selector
-        strategies = self.strategy_selector.get_all_strategies()
-        for strategy_key, strategy_name in strategies.items():
-            self.strategy_selector_combo.addItem(strategy_name, strategy_key)
-
-        # Add "Auto" option at the top
-        self.strategy_selector_combo.insertItem(0, "Auto (Recommended)", "auto")
-        self.strategy_selector_combo.setCurrentIndex(0)
-
-        # Connect to handler
-        self.strategy_selector_combo.currentIndexChanged.connect(self.on_prediction_strategy_changed)
-
-        controls_layout.addWidget(self.strategy_selector_combo)
+        self.strategy_selector = QComboBox()
+        self.strategy_selector.addItems([
+            "Balanced (Recommended)",
+            "Hot & Cold Numbers", 
+            "Historical Frequency",
+            "Random Baseline"
+        ])
+        self.strategy_selector.setCurrentText("Balanced (Recommended)")
+        controls_layout.addWidget(self.strategy_selector)
 
         controls_layout.addStretch()
         layout.addLayout(controls_layout)
@@ -664,31 +640,6 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.update_performance_display()
 
         self.tab_widget.addTab(predictions_widget, "🎯 Predictions")
-
-    def create_strategy_dashboard_tab(self):
-        """Create strategy dashboard tab"""
-        # Create the strategy dashboard widget
-        self.strategy_dashboard = StrategyDashboard(self)
-
-        # Connect the strategy_selected signal to handle strategy selection
-        self.strategy_dashboard.strategy_selected.connect(self.on_strategy_selected)
-
-        # Add the dashboard to the tab widget
-        self.tab_widget.addTab(self.strategy_dashboard, "🧠 Strategy Dashboard")
-
-    def on_strategy_selected(self, strategy):
-        """Handle strategy selection from the dashboard"""
-        self.current_strategy = strategy
-        strategy_name = self.strategy_selector.get_strategy_name(strategy)
-        self.status_bar.showMessage(f"Selected strategy: {strategy_name}")
-
-        # Update the strategy selector in the predictions tab if it exists
-        if hasattr(self, 'strategy_selector_combo'):
-            # Find the index of the strategy in the combo box
-            for i in range(self.strategy_selector_combo.count()):
-                if self.strategy_selector_combo.itemData(i) == strategy:
-                    self.strategy_selector_combo.setCurrentIndex(i)
-                    break
 
     def create_scraping_tab(self):
         """Create data scraping interface tab"""
@@ -825,33 +776,6 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.update_dashboard()
         self.update_recent_draws_table()
         self.update_analytics_charts()
-
-        # Update strategy dashboard if it exists
-        if hasattr(self, 'strategy_dashboard'):
-            self.strategy_dashboard.current_game = self.current_game
-            self.strategy_dashboard.refresh_data()
-
-    def on_prediction_strategy_changed(self, index):
-        """Handle strategy selection change in the prediction tab"""
-        # Get the strategy key from the combo box
-        strategy = self.strategy_selector_combo.itemData(index)
-        self.current_strategy = strategy
-
-        # Get the strategy display name
-        strategy_name = self.strategy_selector_combo.itemText(index)
-
-        # Update status bar
-        self.status_bar.showMessage(f"Selected strategy: {strategy_name}")
-
-        # Update strategy info in the prediction tab
-        if hasattr(self, 'strategy_info'):
-            if strategy == 'auto':
-                self.strategy_info.setText("Using automatic strategy selection based on historical performance")
-            else:
-                self.strategy_info.setText(f"Using {strategy_name} strategy")
-
-        # Log the strategy change
-        logger.info(f"Strategy changed to {strategy_name} ({strategy})")
 
     def update_data_status(self):
         """Update data status panel with real information"""
@@ -1056,43 +980,18 @@ class SaskatoonLottoPredictor(QMainWindow):
         # Call the new method
         self.update_draws_table()
 
-    def refresh_data(self, full_refresh=False):
-        """
-        Refresh data from files and/or scraping
-
-        Args:
-            full_refresh: If True, refresh all data; if False, only refresh recent data
-        """
+    def refresh_data(self):
+        """Refresh all data from files"""
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)  # Indeterminate progress
-        self.status_bar.showMessage("Refreshing data...")
 
         try:
-            if full_refresh:
-                # Full refresh of all data (slower but comprehensive)
-                self.status_bar.showMessage("Performing full data refresh (this may take a while)...")
-                self.data_manager.refresh_all_data()
-                self.status_bar.showMessage("Full data refresh completed successfully")
-            else:
-                # Smart refresh - only get recent data (faster)
-                self.status_bar.showMessage("Performing smart refresh of recent data...")
-                game = self.get_current_game_code()
-
-                # Use the new refresh_recent_data_only method
-                self.data_manager.refresh_recent_data_only(game)
-                self.status_bar.showMessage("Smart refresh completed successfully")
-
-            # Update all displays
+            self.data_manager.refresh_all_data()
             self.update_dashboard()
             self.update_recent_draws_table()
             self.update_analytics_charts()
-
-            # Update strategy dashboard if it exists
-            if hasattr(self, 'strategy_dashboard'):
-                self.strategy_dashboard.refresh_data()
-
+            self.status_bar.showMessage("Data refreshed successfully")
         except Exception as e:
-            logger.error(f"Error refreshing data: {e}")
             self.status_bar.showMessage(f"Error refreshing data: {e}")
         finally:
             self.progress_bar.setVisible(False)
@@ -1379,19 +1278,19 @@ class SaskatoonLottoPredictor(QMainWindow):
         try:
             # Get current selections
             game = self.get_current_game_code()
-
-            # Use the current_strategy attribute (set by strategy selector)
-            strategy = self.current_strategy
+            strategy_text = self.strategy_selector.currentText()
+            strategy_map = {
+                "Balanced (Recommended)": "balanced",
+                "Hot & Cold Numbers": "hot_cold", 
+                "Historical Frequency": "frequency",
+                "Random Baseline": "random"
+            }
+            strategy = strategy_map.get(strategy_text, "balanced")
 
             # Show loading state
             self.smart_pick_btn.setText("🔄 Generating...")
             self.smart_pick_btn.setEnabled(False)
-
-            if strategy == 'auto':
-                self.strategy_info.setText("Analyzing patterns and selecting the best strategy...")
-            else:
-                strategy_name = self.strategy_selector.get_strategy_name(strategy)
-                self.strategy_info.setText(f"Generating prediction using {strategy_name} strategy...")
+            self.strategy_info.setText("Analyzing patterns and generating your smart pick...")
 
             # Start prediction in worker thread
             self.prediction_worker = PredictionWorker(self.predictor, game, strategy)
@@ -1408,8 +1307,8 @@ class SaskatoonLottoPredictor(QMainWindow):
             self.current_prediction = prediction
 
             # Update numbers display
-            numbers = prediction.get('predicted_numbers', [])
-            game = prediction.get('game', self.get_current_game_code())
+            numbers = prediction['numbers']
+            game = prediction['game']
 
             # Hide extra number labels for 6/49
             show_count = len(numbers)
@@ -1434,29 +1333,19 @@ class SaskatoonLottoPredictor(QMainWindow):
                     label.hide()
 
             # Update confidence display
-            confidence_level = prediction.get('confidence', 'medium')
-
-            # Map confidence level to stars
-            stars_map = {'high': 5, 'medium': 3, 'low': 1}
-            stars_count = stars_map.get(confidence_level, 3)
-            stars = "⭐" * stars_count
+            stars = "⭐" * prediction['confidence_stars']
             self.confidence_stars.setText(stars)
 
-            # Get confidence percentage from metadata if available
-            metadata = prediction.get('metadata', {})
-            confidence_pct = metadata.get('strategy_backtest_score', 0.5) * 100
-            confidence_label = self.get_confidence_label(confidence_pct / 100)
+            confidence_pct = prediction['confidence'] * 100
+            confidence_label = self.get_confidence_label(prediction['confidence'])
             self.confidence_text.setText(f"{confidence_label} ({confidence_pct:.0f}%)")
 
             # Update strategy info
-            strategy_name = prediction.get('strategy_display_name', 'Unknown')
-            data_count = metadata.get('total_draws_analyzed', 0)
-            explanation = prediction.get('explanation', '')
-
+            strategy_name = prediction['strategy_name']
+            data_count = prediction.get('data_draws_count', 0)
             self.strategy_info.setText(
                 f"Strategy: {strategy_name} | Based on {data_count} historical draws | "
-                f"Generated at {datetime.now().strftime('%H:%M:%S')}\n"
-                f"{explanation}"
+                f"Generated at {datetime.now().strftime('%H:%M:%S')}"
             )
 
             # Enable action buttons
@@ -1468,10 +1357,6 @@ class SaskatoonLottoPredictor(QMainWindow):
 
             # Update performance display
             self.update_performance_display()
-
-            # Update strategy dashboard if it exists
-            if hasattr(self, 'strategy_dashboard'):
-                self.strategy_dashboard.refresh_data()
 
         except Exception as e:
             self.on_prediction_error(f"Failed to display prediction: {e}")

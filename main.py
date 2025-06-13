@@ -5,6 +5,12 @@ This is the main entry point for the Saskatoon Lotto Predictor application.
 It launches the GUI by default, or runs batch scraping operations when command-line
 arguments are provided.
 
+The application now uses a modular architecture with:
+- Historical PDF archives (authoritative data source)
+- Live web scraping (recent draws only)
+- Self-optimizing prediction strategies
+- Statistical regime detection
+
 Examples:
   # Launch GUI (default)
   python main.py
@@ -31,7 +37,16 @@ logger = get_logger(__name__)
 
 def main():
     """Main application entry point"""
-    logger.info("Starting Saskatoon Lotto Predictor")
+    logger.info("Starting Enhanced Saskatoon Lotto Predictor")
+
+    # Pre-initialize data manager for better UX
+    try:
+        from core.data_manager import get_data_manager
+        data_manager = get_data_manager()
+        # Pre-load data in background (optional)
+        # data_manager.load_game_data('649', full_refresh=False)
+    except Exception as e:
+        logger.warning(f"Data manager initialization failed, using fallback: {e}")
 
     # Check if command-line arguments are provided
     if len(sys.argv) > 1:
@@ -65,9 +80,109 @@ def run_gui_mode():
 def run_cli_mode():
     """Run in command-line mode for batch scraping operations"""
     try:
-        # Import the scraper module
+        # First try to use the new data sources module
+        try:
+            from data_sources.live_scraper import LiveResultsScraper
+            from core.data_manager import get_data_manager
+
+            # Check if we're being asked to run the scraper directly
+            if '--legacy-scraper' in sys.argv:
+                # Remove the flag and use the legacy scraper
+                sys.argv.remove('--legacy-scraper')
+                raise ImportError("Using legacy scraper as requested")
+
+            logger.info("Running in command-line mode with enhanced data sources")
+
+            # Parse arguments
+            parser = argparse.ArgumentParser(description="Enhanced Lottery Data Tool")
+            parser.add_argument('--game', type=str, required=True, help='Game code (649, max, etc.)')
+            parser.add_argument('--recent', action='store_true', help='Get only recent draws (last 30 days)')
+            parser.add_argument('--output', type=str, help='Output file path')
+            parser.add_argument('--format', type=str, choices=['csv', 'sqlite', 'both'], default='csv')
+            parser.add_argument('--refresh-all', action='store_true', help='Refresh all data sources')
+
+            args, _ = parser.parse_known_args()
+
+            # Initialize components
+            data_manager = get_data_manager()
+            live_scraper = LiveResultsScraper()
+
+            if args.refresh_all:
+                # Refresh all data
+                data_manager.refresh_all_data()
+                print("✅ All data refreshed successfully")
+                return 0
+
+            if args.recent:
+                # Get only recent draws
+                draws = live_scraper.get_recent_draws(args.game)
+
+                if not draws:
+                    print(f"❌ No recent draws found for {args.game}")
+                    return 1
+
+                # Save to file if output specified
+                if args.output:
+                    live_scraper.save_to_csv(draws, args.output)
+                    print(f"✅ Saved {len(draws)} recent draws to {args.output}")
+                else:
+                    # Print summary
+                    print(f"✅ Found {len(draws)} recent draws for {args.game}")
+                    for draw in draws[:5]:  # Show first 5
+                        print(f"  {draw.get('date', 'Unknown')}: {draw.get('numbers', [])}")
+
+                    if len(draws) > 5:
+                        print(f"  ... and {len(draws) - 5} more")
+
+                return 0
+
+            # Default: load all data and show summary
+            data = data_manager.load_game_data(args.game)
+
+            if data.empty:
+                print(f"❌ No data found for {args.game}")
+                return 1
+
+            # Print summary
+            print(f"✅ Loaded {len(data)} draws for {args.game}")
+            print(f"📊 Date range: {data['date'].min()} to {data['date'].max()}")
+
+            # Save to file if output specified
+            if args.output:
+                if args.format == 'csv':
+                    data.to_csv(args.output, index=False)
+                    print(f"✅ Saved to {args.output}")
+                elif args.format == 'sqlite':
+                    import sqlite3
+                    conn = sqlite3.connect(args.output)
+                    data.to_sql('lottery_draws', conn, if_exists='replace', index=False)
+                    conn.close()
+                    print(f"✅ Saved to SQLite database: {args.output}")
+                elif args.format == 'both':
+                    # Save CSV
+                    csv_path = args.output + '.csv'
+                    data.to_csv(csv_path, index=False)
+
+                    # Save SQLite
+                    db_path = args.output + '.db'
+                    import sqlite3
+                    conn = sqlite3.connect(db_path)
+                    data.to_sql('lottery_draws', conn, if_exists='replace', index=False)
+                    conn.close()
+
+                    print(f"✅ Saved to CSV: {csv_path}")
+                    print(f"✅ Saved to SQLite: {db_path}")
+
+            return 0
+
+        except ImportError as e:
+            logger.info(f"Enhanced data sources not available, falling back to legacy scraper: {e}")
+            # Fall back to the original scraper
+            pass
+
+        # Import the original scraper module as fallback
         from wclc_scraper import run_scraper
-        logger.info("Running in command-line mode")
+        logger.info("Running in command-line mode with legacy scraper")
 
         # Call the run_scraper function from wclc_scraper.py
         return run_scraper()
