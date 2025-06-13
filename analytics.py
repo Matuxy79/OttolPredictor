@@ -57,7 +57,8 @@ class LotteryAnalytics:
             # Generate all possible pairs from the draw
             for i in range(len(numbers_list)):
                 for j in range(i+1, len(numbers_list)):
-                    pair = (numbers_list[i], numbers_list[j])
+                    # Fix: Ensure pair is always sorted for consistency
+                    pair = tuple(sorted([numbers_list[i], numbers_list[j]]))
                     pairs[pair] = pairs.get(pair, 0) + 1
 
         return pairs

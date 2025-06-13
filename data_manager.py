@@ -294,29 +294,38 @@ class LotteryDataManager:
 
         # If it's a string, try different parsing strategies
         if isinstance(numbers_data, str):
+            # Remove quotes and whitespace from the string
+            numbers_str = numbers_data.strip('\'"')
+
             # Try JSON parsing first (for SQLite stored data)
             try:
                 import json
-                parsed_list = json.loads(numbers_data)
+                parsed_list = json.loads(numbers_str)
                 if isinstance(parsed_list, list):
                     return [int(num) for num in parsed_list]
             except (json.JSONDecodeError, ValueError, TypeError):
                 pass
 
-            # Try eval for string representation of list like "[1, 2, 3]"
-            if numbers_data.strip().startswith('[') and numbers_data.strip().endswith(']'):
+            # Try ast.literal_eval for string representation of list like "[1, 2, 3]"
+            if numbers_str.startswith('[') and numbers_str.endswith(']'):
                 try:
-                    parsed_list = eval(numbers_data)
+                    import ast
+                    parsed_list = ast.literal_eval(numbers_str)
                     if isinstance(parsed_list, list):
                         return [int(num) for num in parsed_list]
                 except (SyntaxError, ValueError, TypeError):
-                    pass
+                    # Fallback: manual parsing
+                    try:
+                        numbers_str = numbers_str.strip('[]')
+                        return [int(x.strip()) for x in numbers_str.split(',') if x.strip()]
+                    except (ValueError, TypeError):
+                        pass
 
             # Try comma-separated values
-            if ',' in numbers_data:
+            if ',' in numbers_str:
                 try:
                     # Remove brackets if present
-                    cleaned = numbers_data.strip('[]() ')
+                    cleaned = numbers_str.strip('[]() ')
                     return [int(num.strip()) for num in cleaned.split(',') if num.strip()]
                 except (ValueError, TypeError):
                     pass

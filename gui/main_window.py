@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout
                             QGridLayout, QProgressBar, QStatusBar, QSplitter,
                             QScrollArea, QFrame, QMessageBox, QInputDialog)
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QRunnable, QThreadPool, QObject
-from PyQt5.QtGui import QFont, QIcon, QPalette, QColor
+from PyQt5.QtGui import QFont, QIcon, QPalette, QColor, QPixmap
 from datetime import datetime
 
 # For matplotlib integration
@@ -277,6 +277,30 @@ class SaskatoonLottoPredictor(QMainWindow):
         dashboard_widget = QWidget()
         layout = QVBoxLayout(dashboard_widget)
 
+        # Data status section
+        data_status_group = QGroupBox("📈 Data Status")
+        data_status_layout = QVBoxLayout(data_status_group)
+
+        self.data_649_status = QLabel("❓ Lotto 6/49: Checking data...")
+        self.data_max_status = QLabel("❓ Lotto Max: Checking data...")
+
+        data_status_layout.addWidget(self.data_649_status)
+        data_status_layout.addWidget(self.data_max_status)
+
+        layout.addWidget(data_status_group)
+
+        # Recent draws section
+        recent_draws_group = QGroupBox("🎯 Recent Draws")
+        recent_draws_layout = QVBoxLayout(recent_draws_group)
+
+        self.recent_649_display = QLabel("Loading recent Lotto 6/49 draws...")
+        self.recent_max_display = QLabel("Loading recent Lotto Max draws...")
+
+        recent_draws_layout.addWidget(self.recent_649_display)
+        recent_draws_layout.addWidget(self.recent_max_display)
+
+        layout.addWidget(recent_draws_group)
+
         # Game summary section
         summary_group = QGroupBox("📊 Game Summary")
         summary_layout = QGridLayout(summary_group)
@@ -324,6 +348,29 @@ class SaskatoonLottoPredictor(QMainWindow):
         """Create recent draws table tab"""
         draws_widget = QWidget()
         layout = QVBoxLayout(draws_widget)
+
+        # Controls for the draws table
+        controls_layout = QHBoxLayout()
+
+        # Game selector for draws table
+        controls_layout.addWidget(QLabel("Game:"))
+        self.draws_game_combo = QComboBox()
+
+        # Add game options with data
+        self.draws_game_combo.addItem("Lotto 6/49", "649")
+        self.draws_game_combo.addItem("Lotto Max", "max")
+
+        # Connect signal to update table when game changes
+        self.draws_game_combo.currentIndexChanged.connect(self.update_draws_table)
+        controls_layout.addWidget(self.draws_game_combo)
+
+        # Add refresh button
+        refresh_btn = QPushButton("🔄 Refresh")
+        refresh_btn.clicked.connect(self.update_draws_table)
+        controls_layout.addWidget(refresh_btn)
+
+        controls_layout.addStretch()
+        layout.addLayout(controls_layout)
 
         # Table for recent draws
         self.draws_table = QTableWidget()
@@ -730,9 +777,152 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.update_recent_draws_table()
         self.update_analytics_charts()
 
+    def update_data_status(self):
+        """Update data status panel with real information"""
+        try:
+            # Check 649 data
+            data_649 = self.data_manager.load_game_data('649')
+            if not data_649.empty and 'numbers_list' in data_649.columns:
+                count_649 = len(data_649)
+                dates_649 = []
+
+                # Get date range if available
+                if 'date' in data_649.columns:
+                    dates_649 = data_649['date'].tolist()
+
+                # Fix: Handle empty dates safely
+                if dates_649 and any(d for d in dates_649 if d and d != ''):
+                    valid_dates = [d for d in dates_649 if d and d != '']
+                    date_range_649 = f"{valid_dates[0]} to {valid_dates[-1]}"
+                else:
+                    date_range_649 = "No valid dates"
+
+                self.data_649_status.setText(f"✅ Lotto 6/49: {count_649} draws ({date_range_649})")
+            else:
+                self.data_649_status.setText("❌ Lotto 6/49: No data available")
+
+            # Check Lotto Max data
+            data_max = self.data_manager.load_game_data('max')
+            if not data_max.empty and 'numbers_list' in data_max.columns:
+                count_max = len(data_max)
+                dates_max = []
+
+                # Get date range if available
+                if 'date' in data_max.columns:
+                    dates_max = data_max['date'].tolist()
+
+                # Fix: Handle empty dates safely
+                if dates_max and any(d for d in dates_max if d and d != ''):
+                    valid_dates = [d for d in dates_max if d and d != '']
+                    date_range_max = f"{valid_dates[0]} to {valid_dates[-1]}"
+                else:
+                    date_range_max = "No valid dates"
+
+                self.data_max_status.setText(f"✅ Lotto Max: {count_max} draws ({date_range_max})")
+            else:
+                self.data_max_status.setText("❌ Lotto Max: No data available")
+
+        except Exception as e:
+            logger.error(f"Failed to update data status: {e}")
+            import traceback
+            traceback.print_exc()  # Add for debugging
+            self.data_649_status.setText("❌ Error loading data status")
+            self.data_max_status.setText("❌ Error loading data status")
+
+    def update_draws_table(self):
+        """Update the draws table display"""
+        try:
+            game = self.draws_game_combo.currentData()
+            if not game:
+                return
+
+            # Fix: Use 'count' parameter instead of 'days'
+            draws = self.data_manager.get_recent_draws(game, count=50)
+
+            # Clear and populate table
+            self.draws_table.setRowCount(len(draws))
+
+            for row, draw in enumerate(draws):
+                # Date
+                date_item = QTableWidgetItem(draw.get('date', 'Unknown'))
+                self.draws_table.setItem(row, 0, date_item)
+
+                # Numbers
+                numbers = draw.get('numbers', [])
+                numbers_str = ', '.join(map(str, numbers))
+                numbers_item = QTableWidgetItem(numbers_str)
+                self.draws_table.setItem(row, 1, numbers_item)
+
+                # Bonus (if applicable)
+                bonus = draw.get('bonus', '')
+                bonus_item = QTableWidgetItem(str(bonus) if bonus else '-')
+                self.draws_table.setItem(row, 2, bonus_item)
+
+                # Gold Ball (placeholder)
+                gold_ball_item = QTableWidgetItem('-')
+                self.draws_table.setItem(row, 3, gold_ball_item)
+
+                # Day (placeholder)
+                day_item = QTableWidgetItem('-')
+                self.draws_table.setItem(row, 4, day_item)
+
+                # Notes (placeholder)
+                notes_item = QTableWidgetItem('')
+                self.draws_table.setItem(row, 5, notes_item)
+
+            # Resize columns to content
+            self.draws_table.resizeColumnsToContents()
+
+        except Exception as e:
+            logger.error(f"Error updating draws table: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def update_recent_draws(self):
+        """Update recent draws display with latest results"""
+        try:
+            # Fix: Use 'count' instead of 'days'
+            recent_649 = self.data_manager.get_recent_draws('649', count=1)
+            if recent_649:
+                draw = recent_649[0]
+                numbers = draw.get('numbers', [])
+                date = draw.get('date', 'Unknown date')
+                bonus = draw.get('bonus', '')
+
+                numbers_str = ' '.join(f"[{n:02d}]" for n in numbers)
+                bonus_str = f" + Bonus: {bonus}" if bonus else ""
+                self.recent_649_display.setText(f"🎯 Lotto 6/49 - {date}\n{numbers_str}{bonus_str}")
+            else:
+                self.recent_649_display.setText("❌ No recent 6/49 draws available")
+
+            # Fix: Same for Lotto Max
+            recent_max = self.data_manager.get_recent_draws('max', count=1)
+            if recent_max:
+                draw = recent_max[0]
+                numbers = draw.get('numbers', [])
+                date = draw.get('date', 'Unknown date')
+
+                numbers_str = ' '.join(f"[{n:02d}]" for n in numbers)
+                self.recent_max_display.setText(f"🎯 Lotto Max - {date}\n{numbers_str}")
+            else:
+                self.recent_max_display.setText("❌ No recent Lotto Max draws available")
+
+        except Exception as e:
+            logger.error(f"Failed to update recent draws: {e}")
+            import traceback
+            traceback.print_exc()
+            self.recent_649_display.setText("❌ Error loading recent draws")
+            self.recent_max_display.setText("❌ Error loading recent draws")
+
     def update_dashboard(self):
         """Update dashboard with current game data"""
         try:
+            # Update data status first
+            self.update_data_status()
+
+            # Update recent draws
+            self.update_recent_draws()
+
             current_game = getattr(self, 'current_game', '649')
             summary = self.data_manager.get_game_summary(current_game)
 
@@ -777,42 +967,18 @@ class SaskatoonLottoPredictor(QMainWindow):
             self.recent_activity_text.append("⚠️ Error loading data. Please try refreshing.")
 
     def update_recent_draws_table(self):
-        """Update the recent draws table"""
-        try:
-            current_game = getattr(self, 'current_game', '649')
-            data = self.data_manager.get_recent_draws(current_game, days=60)
+        """Update the recent draws table (legacy method, now calls update_draws_table)"""
+        # Set the combo box to the current game
+        current_game = getattr(self, 'current_game', '649')
 
-            self.draws_table.setRowCount(min(len(data), 20))  # Show max 20 draws
+        # Find the index of the current game in the combo box
+        for i in range(self.draws_game_combo.count()):
+            if self.draws_game_combo.itemData(i) == current_game:
+                self.draws_game_combo.setCurrentIndex(i)
+                break
 
-            for row, (_, draw) in enumerate(data.head(20).iterrows()):
-                # Date
-                date_item = QTableWidgetItem(str(draw.get('date', 'Unknown')))
-                self.draws_table.setItem(row, 0, date_item)
-
-                # Numbers
-                numbers_item = QTableWidgetItem(str(draw.get('numbers', '')))
-                self.draws_table.setItem(row, 1, numbers_item)
-
-                # Bonus
-                bonus_item = QTableWidgetItem(str(draw.get('bonus', '')))
-                self.draws_table.setItem(row, 2, bonus_item)
-
-                # Gold Ball
-                gold_ball_item = QTableWidgetItem(str(draw.get('gold_ball', '')))
-                self.draws_table.setItem(row, 3, gold_ball_item)
-
-                # Day of week
-                day_item = QTableWidgetItem(str(draw.get('day_of_week', '')))
-                self.draws_table.setItem(row, 4, day_item)
-
-                # Notes (placeholder)
-                notes_item = QTableWidgetItem("")
-                self.draws_table.setItem(row, 5, notes_item)
-
-            self.draws_table.resizeColumnsToContents()
-
-        except Exception as e:
-            logger.error(f"Error updating draws table: {e}")
+        # Call the new method
+        self.update_draws_table()
 
     def refresh_data(self):
         """Refresh all data from files"""
