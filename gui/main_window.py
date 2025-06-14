@@ -5,6 +5,7 @@ Sister-friendly lottery prediction interface
 
 import sys
 import os
+import pandas as pd
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, 
                             QWidget, QTabWidget, QLabel, QPushButton, QTableWidget,
                             QTableWidgetItem, QComboBox, QTextEdit, QGroupBox,
@@ -145,6 +146,10 @@ class SaskatoonLottoPredictor(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        # Initialize logger
+        import logging
+        self.logger = logging.getLogger(__name__)
 
         # Initialize prediction components
         self.data_manager = get_data_manager()
@@ -333,9 +338,9 @@ class SaskatoonLottoPredictor(QMainWindow):
 
         layout.addWidget(summary_group)
 
-        # Quick stats section
-        stats_group = QGroupBox("🔥 Quick Stats")
-        stats_layout = QGridLayout(stats_group)
+        # Quick stats section with dynamic title
+        self.stats_group = QGroupBox("🔥 Quick Stats")
+        stats_layout = QGridLayout(self.stats_group)
 
         self.hot_numbers_label = QLabel("Hot Numbers: Loading...")
         self.cold_numbers_label = QLabel("Cold Numbers: Loading...")
@@ -345,7 +350,7 @@ class SaskatoonLottoPredictor(QMainWindow):
         stats_layout.addWidget(QLabel("Least Frequent:"), 1, 0)
         stats_layout.addWidget(self.cold_numbers_label, 1, 1)
 
-        layout.addWidget(stats_group)
+        layout.addWidget(self.stats_group)
 
         # Recent activity
         activity_group = QGroupBox("📅 Recent Activity")
@@ -854,105 +859,157 @@ class SaskatoonLottoPredictor(QMainWindow):
         logger.info(f"Strategy changed to {strategy_name} ({strategy})")
 
     def update_data_status(self):
-        """Update data status panel with real information"""
+        """Update data status with detailed user feedback"""
         try:
             # Check 649 data
-            data_649 = self.data_manager.load_game_data('649')
-            if not data_649.empty and 'numbers_list' in data_649.columns:
-                count_649 = len(data_649)
-                dates_649 = []
+            data_649 = self.data_manager.load_game_data('649', full_refresh=False)
+            count_649 = len(data_649) if not data_649.empty else 0
 
-                # Get date range if available
-                if 'date' in data_649.columns:
-                    dates_649 = data_649['date'].tolist()
-
-                # Fix: Handle empty dates safely
-                if dates_649 and any(d for d in dates_649 if d and d != ''):
-                    valid_dates = [d for d in dates_649 if d and d != '']
-                    date_range_649 = f"{valid_dates[0]} to {valid_dates[-1]}"
-                else:
-                    date_range_649 = "No valid dates"
-
-                self.data_649_status.setText(f"✅ Lotto 6/49: {count_649} draws ({date_range_649})")
+            if count_649 > 500:  # Good historical coverage
+                self.data_649_status.setText(f"✅ Lotto 6/49: {count_649} draws loaded")
+                self.data_649_status.setStyleSheet("color: green; font-weight: bold;")
+            elif count_649 > 50:  # Some data but limited
+                self.data_649_status.setText(f"⚠️ Lotto 6/49: {count_649} draws (limited data)")
+                self.data_649_status.setStyleSheet("color: orange; font-weight: bold;")
+            elif count_649 > 0:  # Very limited data
+                self.data_649_status.setText(f"🔶 Lotto 6/49: {count_649} draws (very limited)")
+                self.data_649_status.setStyleSheet("color: #FF6600; font-weight: bold;")
             else:
                 self.data_649_status.setText("❌ Lotto 6/49: No data available")
+                self.data_649_status.setStyleSheet("color: red; font-weight: bold;")
 
-            # Check Lotto Max data
-            data_max = self.data_manager.load_game_data('max')
-            if not data_max.empty and 'numbers_list' in data_max.columns:
-                count_max = len(data_max)
-                dates_max = []
+            # Check Max data  
+            data_max = self.data_manager.load_game_data('max', full_refresh=False)
+            count_max = len(data_max) if not data_max.empty else 0
 
-                # Get date range if available
-                if 'date' in data_max.columns:
-                    dates_max = data_max['date'].tolist()
-
-                # Fix: Handle empty dates safely
-                if dates_max and any(d for d in dates_max if d and d != ''):
-                    valid_dates = [d for d in dates_max if d and d != '']
-                    date_range_max = f"{valid_dates[0]} to {valid_dates[-1]}"
-                else:
-                    date_range_max = "No valid dates"
-
-                self.data_max_status.setText(f"✅ Lotto Max: {count_max} draws ({date_range_max})")
+            if count_max > 500:
+                self.data_max_status.setText(f"✅ Lotto Max: {count_max} draws loaded")
+                self.data_max_status.setStyleSheet("color: green; font-weight: bold;")
+            elif count_max > 50:
+                self.data_max_status.setText(f"⚠️ Lotto Max: {count_max} draws (limited data)")
+                self.data_max_status.setStyleSheet("color: orange; font-weight: bold;")
+            elif count_max > 0:
+                self.data_max_status.setText(f"🔶 Lotto Max: {count_max} draws (very limited)")
+                self.data_max_status.setStyleSheet("color: #FF6600; font-weight: bold;")
             else:
                 self.data_max_status.setText("❌ Lotto Max: No data available")
+                self.data_max_status.setStyleSheet("color: red; font-weight: bold;")
+
+            # Add date range info if data exists
+            if count_649 > 0 and not data_649.empty:
+                try:
+                    min_date = str(data_649['date'].min())
+                    max_date = str(data_649['date'].max())
+                    current_text = self.data_649_status.text()
+                    self.data_649_status.setText(f"{current_text}\n({min_date} to {max_date})")
+                except Exception:
+                    pass  # Skip date range if there's an issue
+
+            if count_max > 0 and not data_max.empty:
+                try:
+                    min_date = str(data_max['date'].min())
+                    max_date = str(data_max['date'].max())
+                    current_text = self.data_max_status.text()
+                    self.data_max_status.setText(f"{current_text}\n({min_date} to {max_date})")
+                except Exception:
+                    pass
+
+            # Update status bar with overall system status
+            total_draws = count_649 + count_max
+            if total_draws > 1000:
+                self.status_bar.showMessage(f"✅ System Ready - {total_draws} total draws loaded", 5000)
+            elif total_draws > 100:
+                self.status_bar.showMessage(f"⚠️ Limited Data - {total_draws} total draws loaded", 5000)
+            else:
+                self.status_bar.showMessage(f"❌ Minimal Data - Only {total_draws} draws available", 10000)
 
         except Exception as e:
-            logger.error(f"Failed to update data status: {e}")
-            import traceback
-            traceback.print_exc()  # Add for debugging
-            self.data_649_status.setText("❌ Error loading data status")
-            self.data_max_status.setText("❌ Error loading data status")
+            self.logger.error(f"Error updating data status: {e}")
+            self.data_649_status.setText("❌ Error loading 6/49 data")
+            self.data_649_status.setStyleSheet("color: red;")
+            self.data_max_status.setText("❌ Error loading Max data")
+            self.data_max_status.setStyleSheet("color: red;")
+            self.status_bar.showMessage(f"❌ System Error: {str(e)}", 10000)
 
     def update_draws_table(self):
-        """Update the draws table display"""
+        """Update the draws table with proper type handling"""
         try:
-            game = self.draws_game_combo.currentData()
-            if not game:
-                return
+            current_game = self.get_current_game_code()
+            draws = self.data_manager.load_game_data(current_game, full_refresh=False)
 
-            # Fix: Use 'count' parameter instead of 'days'
-            draws = self.data_manager.get_recent_draws(game, count=50)
+            # Convert to list of dicts if it's a DataFrame
+            if hasattr(draws, 'to_dict'):
+                draws = draws.to_dict('records')
 
-            # Clear and populate table
             self.draws_table.setRowCount(len(draws))
 
             for row, draw in enumerate(draws):
-                # Date
-                date_item = QTableWidgetItem(draw.get('date', 'Unknown'))
-                self.draws_table.setItem(row, 0, date_item)
+                # CRITICAL: Ensure all values are strings with proper null handling
 
-                # Numbers
-                numbers = draw.get('numbers', [])
-                numbers_str = ', '.join(map(str, numbers))
+                # Handle date field safely
+                date_value = draw.get('date', 'Unknown')
+                if date_value is None or pd.isna(date_value) or str(date_value).lower() in ['nan', 'nat', 'none']:
+                    date_str = 'Unknown'
+                else:
+                    date_str = str(date_value)
+
+                # Handle numbers field safely
+                numbers_value = draw.get('numbers', [])
+                if isinstance(numbers_value, list):
+                    # It's already a list - join with commas
+                    numbers_str = ', '.join(str(num) for num in numbers_value if num is not None)
+                elif isinstance(numbers_value, str):
+                    # It's a string - clean it up and display
+                    numbers_clean = numbers_value.strip('[]').replace("'", "").replace('"', '')
+                    numbers_str = numbers_clean
+                else:
+                    # Fallback for any other type
+                    numbers_str = str(numbers_value) if numbers_value is not None else ''
+
+                # Handle bonus field safely
+                bonus_value = draw.get('bonus', None)
+                if bonus_value is None or pd.isna(bonus_value) or str(bonus_value).lower() in ['nan', 'none', '']:
+                    bonus_str = ''
+                else:
+                    bonus_str = str(bonus_value)
+
+                # Handle gold ball (649 specific)
+                gold_ball_value = draw.get('gold_ball', None)
+                if gold_ball_value is None or pd.isna(gold_ball_value) or str(gold_ball_value).lower() in ['nan', 'none', '']:
+                    gold_ball_str = ''
+                else:
+                    gold_ball_str = str(gold_ball_value)
+
+                # Create table items with guaranteed string values
+                date_item = QTableWidgetItem(date_str)
                 numbers_item = QTableWidgetItem(numbers_str)
+                bonus_item = QTableWidgetItem(bonus_str)
+                gold_ball_item = QTableWidgetItem(gold_ball_str)
+                day_item = QTableWidgetItem('')  # Placeholder
+                notes_item = QTableWidgetItem('')  # Placeholder
+
+                # Set items in table
+                self.draws_table.setItem(row, 0, date_item)
                 self.draws_table.setItem(row, 1, numbers_item)
-
-                # Bonus (if applicable)
-                bonus = draw.get('bonus', '')
-                bonus_item = QTableWidgetItem(str(bonus) if bonus else '-')
                 self.draws_table.setItem(row, 2, bonus_item)
-
-                # Gold Ball (placeholder)
-                gold_ball_item = QTableWidgetItem('-')
                 self.draws_table.setItem(row, 3, gold_ball_item)
-
-                # Day (placeholder)
-                day_item = QTableWidgetItem('-')
                 self.draws_table.setItem(row, 4, day_item)
-
-                # Notes (placeholder)
-                notes_item = QTableWidgetItem('')
                 self.draws_table.setItem(row, 5, notes_item)
 
-            # Resize columns to content
             self.draws_table.resizeColumnsToContents()
+            self.logger.info(f"Updated draws table with {len(draws)} records")
 
         except Exception as e:
-            logger.error(f"Error updating draws table: {e}")
-            import traceback
-            traceback.print_exc()
+            self.logger.error(f"Error updating draws table: {e}")
+            # Show error in GUI instead of crashing
+            self.draws_table.setRowCount(1)
+            error_item = QTableWidgetItem(f"Error loading data: {str(e)}")
+            error_item.setBackground(QColor(255, 200, 200))  # Light red background
+            self.draws_table.setItem(0, 0, error_item)
+
+            # Clear other columns
+            for col in range(1, 6):
+                self.draws_table.setItem(0, col, QTableWidgetItem(''))
 
     def update_recent_draws(self):
         """Update recent draws display with latest results"""
@@ -990,24 +1047,23 @@ class SaskatoonLottoPredictor(QMainWindow):
             self.recent_649_display.setText("❌ Error loading recent draws")
             self.recent_max_display.setText("❌ Error loading recent draws")
 
-    def update_dashboard(self):
-        """Update dashboard with current game data"""
+    def get_game_display_name(self, game_code):
+        """Get a user-friendly display name for a game code"""
+        # Use the centralized configuration for consistency
+        from config import AppConfig
+        return AppConfig.get_game_display_name(game_code)
+
+    def process_game_stats(self, game_code):
+        """Process game statistics and return formatted data for display
+
+        This separates data processing logic from UI display logic
+        """
         try:
-            # Update data status first
-            self.update_data_status()
+            # Get raw data from data manager
+            summary = self.data_manager.get_game_summary(game_code)
+            game_display_name = self.get_game_display_name(game_code)
 
-            # Update recent draws
-            self.update_recent_draws()
-
-            current_game = getattr(self, 'current_game', '649')
-            summary = self.data_manager.get_game_summary(current_game)
-
-            # Update summary labels
-            self.total_draws_label.setText(f"Total Draws: {summary['total_draws']:,}")
-            self.date_range_label.setText(f"Date Range: {summary['date_range']}")
-            self.last_updated_label.setText(f"Last Updated: {summary['last_updated']}")
-
-            # Update hot/cold numbers with safe access
+            # Process hot/cold numbers
             hot_nums = "No data"
             cold_nums = "No data"
 
@@ -1017,20 +1073,71 @@ class SaskatoonLottoPredictor(QMainWindow):
             if 'least_frequent_numbers' in summary and summary['least_frequent_numbers']:
                 cold_nums = ", ".join(map(str, summary['least_frequent_numbers'][:6]))
 
-            self.hot_numbers_label.setText(hot_nums)
-            self.cold_numbers_label.setText(cold_nums)
+            # Format activity messages
+            activity_messages = []
+            activity_messages.append(f"📊 Statistics for {game_display_name}")
+            activity_messages.append(f"📈 Based on all {summary['total_draws']:,} draws ({summary['date_range']})")
+
+            if summary['total_draws'] > 0:
+                activity_messages.append(f"🔥 Hot numbers for {game_display_name}: {hot_nums}")
+                activity_messages.append(f"❄️ Cold numbers for {game_display_name}: {cold_nums}")
+                activity_messages.append(f"📅 Draws in last 30 days: {summary.get('recent_draws', 0)}")
+            else:
+                activity_messages.append("⚠️ No data available for this game.")
+                activity_messages.append("Try refreshing data or selecting a different game.")
+
+            # Return processed data
+            return {
+                'game_display_name': game_display_name,
+                'total_draws': summary['total_draws'],
+                'date_range': summary['date_range'],
+                'last_updated': summary['last_updated'],
+                'hot_numbers': hot_nums,
+                'cold_numbers': cold_nums,
+                'activity_messages': activity_messages
+            }
+
+        except Exception as e:
+            logger.error(f"Error processing game stats: {e}")
+            return {
+                'game_display_name': self.get_game_display_name(game_code),
+                'total_draws': 0,
+                'date_range': 'Error',
+                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'hot_numbers': 'No data',
+                'cold_numbers': 'No data',
+                'activity_messages': ["⚠️ Error loading data. Please try refreshing."]
+            }
+
+    def update_dashboard(self):
+        """Update dashboard with current game data"""
+        try:
+            # Update data status first
+            self.update_data_status()
+
+            # Update recent draws
+            self.update_recent_draws()
+
+            # Get current game and process stats
+            current_game = getattr(self, 'current_game', '649')
+            stats = self.process_game_stats(current_game)
+
+            # Update Quick Stats box title to show which game
+            self.stats_group.setTitle(f"🔥 Quick Stats for {stats['game_display_name']}")
+
+            # Update summary labels
+            self.total_draws_label.setText(f"Total Draws: {stats['total_draws']:,}")
+            self.date_range_label.setText(f"Date Range: {stats['date_range']}")
+            self.last_updated_label.setText(f"Last Updated: {stats['last_updated']}")
+
+            # Update hot/cold numbers
+            self.hot_numbers_label.setText(stats['hot_numbers'])
+            self.cold_numbers_label.setText(stats['cold_numbers'])
 
             # Update recent activity
             self.recent_activity_text.clear()
-            self.recent_activity_text.append(f"📊 Loaded {summary['total_draws']} draws for {current_game.upper()}")
-
-            if summary['total_draws'] > 0:
-                self.recent_activity_text.append(f"🔥 Hot numbers: {hot_nums}")
-                self.recent_activity_text.append(f"❄️ Cold numbers: {cold_nums}")
-                self.recent_activity_text.append(f"📅 Recent draws (30 days): {summary.get('recent_draws', 0)}")
-            else:
-                self.recent_activity_text.append("⚠️ No data available for this game.")
-                self.recent_activity_text.append("Try refreshing data or selecting a different game.")
+            for message in stats['activity_messages']:
+                self.recent_activity_text.append(message)
 
         except Exception as e:
             logger.error(f"Error updating dashboard: {e}")

@@ -24,18 +24,86 @@ class LotteryAnalytics:
     def __init__(self):
         """Initialize the analytics engine"""
         self.data_manager = get_data_manager()
+        self.logger = logging.getLogger(__name__)
 
-    def analyze_number_frequency(self, game: str) -> Dict[int, int]:
-        """
-        Analyze the frequency of each number in a game's history
+    def analyze_number_frequency(self, draws_data, game='649'):
+        """Analyze number frequency with safe data handling"""
+        try:
+            if not draws_data or len(draws_data) == 0:
+                self.logger.warning("No draws data provided for frequency analysis")
+                return pd.DataFrame()
 
-        Args:
-            game: Game type (649, max, etc.)
+            # Handle both DataFrame and list formats
+            if isinstance(draws_data, pd.DataFrame):
+                if 'numbers_list' in draws_data.columns:
+                    # Use the normalized numbers_list column
+                    numbers_lists = draws_data['numbers_list'].tolist()
+                else:
+                    # Fall back to numbers column
+                    numbers_lists = []
+                    for _, row in draws_data.iterrows():
+                        numbers = row.get('numbers', [])
+                        if isinstance(numbers, list) and len(numbers) > 0:
+                            numbers_lists.append(numbers)
+                        elif isinstance(numbers, str):
+                            try:
+                                from schema import DataValidator
+                                normalized = DataValidator.normalize_numbers_field(numbers)
+                                numbers_lists.append(normalized)
+                            except Exception:
+                                continue
+            else:
+                # Handle list of dictionaries
+                numbers_lists = []
+                for draw in draws_data:
+                    numbers = draw.get('numbers', [])
+                    if isinstance(numbers, list) and len(numbers) > 0:
+                        numbers_lists.append(numbers)
+                    elif isinstance(numbers, str):
+                        try:
+                            from schema import DataValidator
+                            normalized = DataValidator.normalize_numbers_field(numbers)
+                            numbers_lists.append(normalized)
+                        except Exception:
+                            continue
 
-        Returns:
-            Dictionary mapping numbers to their frequency counts
-        """
-        return self.data_manager.get_number_frequency(game)
+            if not numbers_lists:
+                self.logger.warning("No valid numbers found in draws data")
+                return pd.DataFrame()
+
+            # Flatten all numbers safely (avoiding unhashable list error)
+            all_numbers = []
+            for numbers in numbers_lists:
+                if isinstance(numbers, list):
+                    # Extend with individual integers (these are hashable)
+                    all_numbers.extend([int(num) for num in numbers if num is not None])
+
+            if not all_numbers:
+                return pd.DataFrame()
+
+            # Count frequencies using individual numbers (not lists)
+            from collections import Counter
+            frequency_counter = Counter(all_numbers)
+
+            # Convert to DataFrame
+            frequency_data = []
+            for number, count in frequency_counter.items():
+                frequency_data.append({
+                    'number': int(number),
+                    'frequency': int(count),
+                    'percentage': round((count / len(numbers_lists)) * 100, 2)
+                })
+
+            # Sort by frequency (most frequent first)
+            frequency_df = pd.DataFrame(frequency_data)
+            frequency_df = frequency_df.sort_values('frequency', ascending=False)
+
+            self.logger.info(f"Analyzed frequency for {len(all_numbers)} total numbers from {len(numbers_lists)} draws")
+            return frequency_df
+
+        except Exception as e:
+            self.logger.error(f"Error analyzing number frequency: {e}")
+            return pd.DataFrame()
 
     def get_number_pairs(self, game: str) -> Dict[Tuple[int, int], int]:
         """
@@ -82,7 +150,7 @@ class LotteryAnalytics:
         }
 
         # Placeholder for future implementation
-        logger.info(f"Analyzing patterns for {game} with {len(data)} draws")
+        self.logger.info(f"Analyzing patterns for {game} with {len(data)} draws")
 
         return patterns
 
@@ -97,14 +165,28 @@ class LotteryAnalytics:
         Returns:
             matplotlib Figure object
         """
-        logger.info(f"Plotting number frequency for {game}")
+        self.logger.info(f"Plotting number frequency for {game}")
 
-        # Get frequency data
-        frequency_data = self.analyze_number_frequency(game)
+        # Get game data
+        game_data = self.data_manager.load_game_data(game)
 
-        # Sort by number
-        numbers = sorted(frequency_data.keys())
-        frequencies = [frequency_data[num] for num in numbers]
+        # Get frequency data using the enhanced method
+        frequency_df = self.analyze_number_frequency(game_data, game)
+
+        if frequency_df.empty:
+            # Create an empty figure with a message
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.text(0.5, 0.5, f"No data available for {game}", 
+                    horizontalalignment='center', verticalalignment='center',
+                    transform=ax.transAxes, fontsize=14)
+            return fig
+
+        # Sort by number for display
+        frequency_df = frequency_df.sort_values('number')
+
+        # Extract data for plotting
+        numbers = frequency_df['number'].tolist()
+        frequencies = frequency_df['frequency'].tolist()
 
         # Create figure and axis
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -113,8 +195,8 @@ class LotteryAnalytics:
         bars = ax.bar(numbers, frequencies, color='skyblue')
 
         # Highlight top 6 most frequent numbers
-        sorted_freq = sorted(frequency_data.items(), key=lambda x: x[1], reverse=True)
-        top_numbers = [item[0] for item in sorted_freq[:6]]
+        top_df = frequency_df.sort_values('frequency', ascending=False).head(6)
+        top_numbers = top_df['number'].tolist()
 
         for bar, num in zip(bars, numbers):
             if num in top_numbers:
@@ -148,7 +230,7 @@ class LotteryAnalytics:
         Returns:
             matplotlib Figure object
         """
-        logger.info(f"Plotting trend analysis for {game}")
+        self.logger.info(f"Plotting trend analysis for {game}")
 
         # Get game data
         data = self.data_manager.load_game_data(game)
@@ -216,7 +298,7 @@ class LotteryAnalytics:
             predictions = logger_instance.get_recent_predictions(game, days=90)
 
             if not predictions:
-                logger.info("No prediction data available for performance plot")
+                self.logger.info("No prediction data available for performance plot")
                 return
 
             # Prepare data for plotting
@@ -232,7 +314,7 @@ class LotteryAnalytics:
                     strategies.append(pred['strategy'])
 
             if not dates:
-                logger.info("No evaluated predictions available for performance plot")
+                self.logger.info("No evaluated predictions available for performance plot")
                 return
 
             plt.figure(figsize=(12, 6))
@@ -272,7 +354,7 @@ class LotteryAnalytics:
                 plt.show()
 
         except Exception as e:
-            logger.error(f"Failed to plot prediction performance: {e}")
+            self.logger.error(f"Failed to plot prediction performance: {e}")
 
     def plot_strategy_comparison(self, save_path: Optional[str] = None) -> None:
         """Compare performance of different strategies"""
@@ -283,7 +365,7 @@ class LotteryAnalytics:
             performance = logger_instance.get_strategy_performance(days=90)
 
             if not performance:
-                logger.info("No strategy performance data available")
+                self.logger.info("No strategy performance data available")
                 return
 
             strategies = list(performance.keys())
@@ -331,7 +413,7 @@ class LotteryAnalytics:
                 plt.show()
 
         except Exception as e:
-            logger.error(f"Failed to plot strategy comparison: {e}")
+            self.logger.error(f"Failed to plot strategy comparison: {e}")
 
     def get_prediction_insights(self, game: str) -> Dict:
         """Get insights about prediction performance"""
@@ -373,7 +455,7 @@ class LotteryAnalytics:
             return insights
 
         except Exception as e:
-            logger.error(f"Failed to get prediction insights: {e}")
+            self.logger.error(f"Failed to get prediction insights: {e}")
             return {}
 
 

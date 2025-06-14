@@ -28,10 +28,18 @@ Examples:
 import sys
 import os
 import argparse
+import logging
 from logging_config import setup_logging, get_logger
 
 # Configure logging
-setup_logging()
+# TEMP: Set to DEBUG level to identify where the application might be hanging
+logging.basicConfig(
+    level=logging.DEBUG,  # TEMP: Switch back to INFO later
+    format='%(asctime)s [%(levelname)s] %(message)s',
+)
+
+# Use the existing logging setup with DEBUG level
+setup_logging(level=logging.DEBUG)  # TEMP: Switch back to INFO later
 
 logger = get_logger(__name__)
 

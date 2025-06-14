@@ -135,78 +135,92 @@ class WCLCPDFParser:
 
     def _parse_649_line(self, line: str) -> Optional[Dict]:
         """
-        Parse a single line from the 649 PDF
+        Parse a single line from the 649 PDF with comprehensive format support
 
-        Expected format: "2024-06-15    01 02 03 04 05 06    Bonus: 07"
-        But may have variations in spacing and formatting
+        Expected formats:
+        - "2024-06-15    01 02 03 04 05 06    Bonus: 07"
+        - "June 15, 2024  1  2  3  4  5  6  Bonus 7"
+        - "15 Jun 2024    01 02 03 04 05 06    07"
         """
         # Skip header or irrelevant lines
-        if not line or "LOTTO 6/49" in line or "Page" in line or "Date" in line:
+        if not line or len(line) < 15:
             return None
 
-        # Try different regex patterns to handle various formats
+        # Skip obvious header lines
+        skip_patterns = ["LOTTO", "Page", "Date", "Draw", "Numbers", "Bonus", "---", "==="]
+        if any(pattern in line.upper() for pattern in skip_patterns):
+            return None
+
+        # Enhanced regex patterns to handle various date formats
         patterns = [
-            # Standard format: "2024-06-15    01 02 03 04 05 06    Bonus: 07"
-            r'(\d{4}-\d{2}-\d{2})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+Bonus:\s+(\d{2})',
+            # Pattern 1: YYYY-MM-DD format with various spacing
+            r'(\d{4}-\d{2}-\d{2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Alternative format: "2024-06-15    01 02 03 04 05 06    07"
-            r'(\d{4}-\d{2}-\d{2})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+(\d{2})',
+            # Pattern 2: YYYY/MM/DD format  
+            r'(\d{4}/\d{2}/\d{2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Date with slashes: "2024/06/15    01 02 03 04 05 06    Bonus: 07"
-            r'(\d{4}/\d{2}/\d{2})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+Bonus:\s+(\d{2})',
+            # Pattern 3: Full month name with comma (e.g., "June 15, 2024")
+            r'([A-Za-z]+\s+\d{1,2},\s+\d{4})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Date with slashes, no bonus label: "2024/06/15    01 02 03 04 05 06    07"
-            r'(\d{4}/\d{2}/\d{2})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+(\d{2})',
+            # Pattern 4: Abbreviated month (e.g., "15 Jun 2024")
+            r'(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Older format with different date: "15 Jun 2024    01 02 03 04 05 06    Bonus: 07"
-            r'(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+Bonus:\s+(\d{2})',
+            # Pattern 5: DD/MM/YYYY format
+            r'(\d{1,2}/\d{1,2}/\d{4})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Older format with different date, no bonus label: "15 Jun 2024    01 02 03 04 05 06    07"
-            r'(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+(\d{2})'
+            # Pattern 6: Abbreviated month without comma (e.g., "Jun 15 2024")
+            r'([A-Za-z]{3}\s+\d{1,2}\s+\d{4})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})'
         ]
 
         for pattern in patterns:
-            match = re.search(pattern, line)
+            match = re.match(pattern, line.strip())
             if match:
-                date_str, numbers_str, bonus_str = match.groups()
+                groups = match.groups()
+                date_str = groups[0]
 
-                # Parse date to standard format
                 try:
-                    if '-' in date_str:
-                        # Already in YYYY-MM-DD format
-                        date = date_str
-                    elif '/' in date_str:
-                        # Convert YYYY/MM/DD to YYYY-MM-DD
-                        date_parts = date_str.split('/')
-                        date = f"{date_parts[0]}-{date_parts[1]}-{date_parts[2]}"
-                    else:
-                        # Convert "15 Jun 2024" to YYYY-MM-DD
-                        date_obj = datetime.strptime(date_str, "%d %b %Y")
-                        date = date_obj.strftime("%Y-%m-%d")
-                except Exception as e:
-                    self.logger.warning(f"Error parsing date '{date_str}': {e}")
-                    date = date_str  # Use original as fallback
+                    # Parse numbers (groups 1-6)
+                    numbers = []
+                    for i in range(1, 7):
+                        num = int(groups[i])
+                        if 1 <= num <= 49:  # Valid 649 range
+                            numbers.append(num)
+                        else:
+                            # Invalid number range, skip this line
+                            return None
 
-                # Parse numbers
-                numbers = [int(num) for num in numbers_str.split()]
+                    # Parse bonus (group 7)
+                    bonus = None
+                    if len(groups) > 7 and groups[7]:
+                        bonus_val = int(groups[7])
+                        if 1 <= bonus_val <= 49:
+                            bonus = bonus_val
 
-                # Parse bonus
-                bonus = int(bonus_str)
+                    # Ensure we have exactly 6 numbers
+                    if len(numbers) != 6:
+                        return None
 
-                return {
-                    'date': date,
-                    'numbers': numbers,
-                    'bonus': bonus,
-                    'game': 'Lotto 649',
-                    'source': 'WCLC_PDF_Archive'
-                }
+                    # Normalize date to YYYY-MM-DD format
+                    normalized_date = self._normalize_date(date_str)
+
+                    return {
+                        'game': 'Lotto 649',
+                        'date': normalized_date,
+                        'numbers': numbers,  # Keep as list
+                        'bonus': bonus,
+                        'source': 'WCLC_PDF_Archive'
+                    }
+
+                except (ValueError, IndexError) as e:
+                    # Failed to parse numbers, skip this line
+                    continue
 
         # If no pattern matched, try a more flexible approach
-        if re.search(r'\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4}', line):
+        if re.search(r'\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4}|[A-Za-z]+\s+\d{1,2},\s+\d{4}', line):
             self.logger.debug(f"Attempting flexible parsing for line: {line}")
 
-            # Extract date
-            date_match = re.search(r'(\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4})', line)
+            # Extract date - now including full month name format
+            date_match = re.search(r'(\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4}|[A-Za-z]+\s+\d{1,2},\s+\d{4})', line)
             if not date_match:
                 return None
 
@@ -217,29 +231,32 @@ class WCLCPDFParser:
             if len(numbers_match) < 7:  # Need at least 6 numbers + bonus
                 return None
 
-            numbers = [int(num) for num in numbers_match[:6]]
-            bonus = int(numbers_match[6])
-
-            # Parse date to standard format
-            try:
-                if '-' in date_str:
-                    # Already in YYYY-MM-DD format
-                    date = date_str
-                elif '/' in date_str:
-                    # Convert YYYY/MM/DD to YYYY-MM-DD
-                    date_parts = date_str.split('/')
-                    date = f"{date_parts[0]}-{date_parts[1]}-{date_parts[2]}"
+            # Validate numbers are in range
+            valid_numbers = []
+            for num_str in numbers_match[:6]:
+                num = int(num_str)
+                if 1 <= num <= 49:  # Valid 649 range
+                    valid_numbers.append(num)
                 else:
-                    # Convert "15 Jun 2024" to YYYY-MM-DD
-                    date_obj = datetime.strptime(date_str, "%d %b %Y")
-                    date = date_obj.strftime("%Y-%m-%d")
-            except Exception as e:
-                self.logger.warning(f"Error parsing date '{date_str}': {e}")
-                date = date_str  # Use original as fallback
+                    # Invalid number, might be part of something else
+                    return None
+
+            if len(valid_numbers) != 6:
+                return None
+
+            # Parse bonus
+            bonus = None
+            if len(numbers_match) > 6:
+                bonus_val = int(numbers_match[6])
+                if 1 <= bonus_val <= 49:
+                    bonus = bonus_val
+
+            # Normalize date format
+            normalized_date = self._normalize_date(date_str)
 
             return {
-                'date': date,
-                'numbers': numbers,
+                'date': normalized_date,
+                'numbers': valid_numbers,
                 'bonus': bonus,
                 'game': 'Lotto 649',
                 'source': 'WCLC_PDF_Archive'
@@ -249,78 +266,92 @@ class WCLCPDFParser:
 
     def _parse_max_line(self, line: str) -> Optional[Dict]:
         """
-        Parse a single line from the Max PDF
+        Parse a single line from the Max PDF with comprehensive format support
 
-        Expected format: "2024-06-15    01 02 03 04 05 06 07    Bonus: 08"
-        But may have variations in spacing and formatting
+        Expected formats:
+        - "2024-06-15    01 02 03 04 05 06 07    Bonus: 08"
+        - "June 15, 2024  1  2  3  4  5  6  7  Bonus 8"
+        - "15 Jun 2024    01 02 03 04 05 06 07    08"
         """
         # Skip header or irrelevant lines
-        if not line or "LOTTO MAX" in line or "Page" in line or "Date" in line:
+        if not line or len(line) < 15:
             return None
 
-        # Try different regex patterns to handle various formats
+        # Skip obvious header lines
+        skip_patterns = ["LOTTO", "Page", "Date", "Draw", "Numbers", "Bonus", "---", "==="]
+        if any(pattern in line.upper() for pattern in skip_patterns):
+            return None
+
+        # Enhanced regex patterns to handle various date formats
         patterns = [
-            # Standard format: "2024-06-15    01 02 03 04 05 06 07    Bonus: 08"
-            r'(\d{4}-\d{2}-\d{2})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+Bonus:\s+(\d{2})',
+            # Pattern 1: YYYY-MM-DD format with various spacing
+            r'(\d{4}-\d{2}-\d{2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Alternative format: "2024-06-15    01 02 03 04 05 06 07    08"
-            r'(\d{4}-\d{2}-\d{2})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+(\d{2})',
+            # Pattern 2: YYYY/MM/DD format  
+            r'(\d{4}/\d{2}/\d{2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Date with slashes: "2024/06/15    01 02 03 04 05 06 07    Bonus: 08"
-            r'(\d{4}/\d{2}/\d{2})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+Bonus:\s+(\d{2})',
+            # Pattern 3: Full month name with comma (e.g., "June 15, 2024")
+            r'([A-Za-z]+\s+\d{1,2},\s+\d{4})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Date with slashes, no bonus label: "2024/06/15    01 02 03 04 05 06 07    08"
-            r'(\d{4}/\d{2}/\d{2})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+(\d{2})',
+            # Pattern 4: Abbreviated month (e.g., "15 Jun 2024")
+            r'(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Older format with different date: "15 Jun 2024    01 02 03 04 05 06 07    Bonus: 08"
-            r'(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+Bonus:\s+(\d{2})',
+            # Pattern 5: DD/MM/YYYY format
+            r'(\d{1,2}/\d{1,2}/\d{4})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})',
 
-            # Older format with different date, no bonus label: "15 Jun 2024    01 02 03 04 05 06 07    08"
-            r'(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2}\s+\d{2})\s+(\d{2})'
+            # Pattern 6: Abbreviated month without comma (e.g., "Jun 15 2024")
+            r'([A-Za-z]{3}\s+\d{1,2}\s+\d{4})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+.*?(\d{1,2})'
         ]
 
         for pattern in patterns:
-            match = re.search(pattern, line)
+            match = re.match(pattern, line.strip())
             if match:
-                date_str, numbers_str, bonus_str = match.groups()
+                groups = match.groups()
+                date_str = groups[0]
 
-                # Parse date to standard format
                 try:
-                    if '-' in date_str:
-                        # Already in YYYY-MM-DD format
-                        date = date_str
-                    elif '/' in date_str:
-                        # Convert YYYY/MM/DD to YYYY-MM-DD
-                        date_parts = date_str.split('/')
-                        date = f"{date_parts[0]}-{date_parts[1]}-{date_parts[2]}"
-                    else:
-                        # Convert "15 Jun 2024" to YYYY-MM-DD
-                        date_obj = datetime.strptime(date_str, "%d %b %Y")
-                        date = date_obj.strftime("%Y-%m-%d")
-                except Exception as e:
-                    self.logger.warning(f"Error parsing date '{date_str}': {e}")
-                    date = date_str  # Use original as fallback
+                    # Parse numbers (groups 1-7)
+                    numbers = []
+                    for i in range(1, 8):
+                        num = int(groups[i])
+                        if 1 <= num <= 50:  # Valid Max range
+                            numbers.append(num)
+                        else:
+                            # Invalid number range, skip this line
+                            return None
 
-                # Parse numbers
-                numbers = [int(num) for num in numbers_str.split()]
+                    # Parse bonus (group 8)
+                    bonus = None
+                    if len(groups) > 8 and groups[8]:
+                        bonus_val = int(groups[8])
+                        if 1 <= bonus_val <= 50:
+                            bonus = bonus_val
 
-                # Parse bonus
-                bonus = int(bonus_str)
+                    # Ensure we have exactly 7 numbers
+                    if len(numbers) != 7:
+                        return None
 
-                return {
-                    'date': date,
-                    'numbers': numbers,
-                    'bonus': bonus,
-                    'game': 'Lotto Max',
-                    'source': 'WCLC_PDF_Archive'
-                }
+                    # Normalize date to YYYY-MM-DD format
+                    normalized_date = self._normalize_date(date_str)
+
+                    return {
+                        'game': 'Lotto Max',
+                        'date': normalized_date,
+                        'numbers': numbers,  # Keep as list
+                        'bonus': bonus,
+                        'source': 'WCLC_PDF_Archive'
+                    }
+
+                except (ValueError, IndexError) as e:
+                    # Failed to parse numbers, skip this line
+                    continue
 
         # If no pattern matched, try a more flexible approach
-        if re.search(r'\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4}', line):
+        if re.search(r'\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4}|[A-Za-z]+\s+\d{1,2},\s+\d{4}', line):
             self.logger.debug(f"Attempting flexible parsing for line: {line}")
 
-            # Extract date
-            date_match = re.search(r'(\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4})', line)
+            # Extract date - now including full month name format
+            date_match = re.search(r'(\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4}|[A-Za-z]+\s+\d{1,2},\s+\d{4})', line)
             if not date_match:
                 return None
 
@@ -331,35 +362,70 @@ class WCLCPDFParser:
             if len(numbers_match) < 8:  # Need at least 7 numbers + bonus
                 return None
 
-            numbers = [int(num) for num in numbers_match[:7]]
-            bonus = int(numbers_match[7])
-
-            # Parse date to standard format
-            try:
-                if '-' in date_str:
-                    # Already in YYYY-MM-DD format
-                    date = date_str
-                elif '/' in date_str:
-                    # Convert YYYY/MM/DD to YYYY-MM-DD
-                    date_parts = date_str.split('/')
-                    date = f"{date_parts[0]}-{date_parts[1]}-{date_parts[2]}"
+            # Validate numbers are in range
+            valid_numbers = []
+            for num_str in numbers_match[:7]:
+                num = int(num_str)
+                if 1 <= num <= 50:  # Valid Max range
+                    valid_numbers.append(num)
                 else:
-                    # Convert "15 Jun 2024" to YYYY-MM-DD
-                    date_obj = datetime.strptime(date_str, "%d %b %Y")
-                    date = date_obj.strftime("%Y-%m-%d")
-            except Exception as e:
-                self.logger.warning(f"Error parsing date '{date_str}': {e}")
-                date = date_str  # Use original as fallback
+                    # Invalid number, might be part of something else
+                    return None
+
+            if len(valid_numbers) != 7:
+                return None
+
+            # Parse bonus
+            bonus = None
+            if len(numbers_match) > 7:
+                bonus_val = int(numbers_match[7])
+                if 1 <= bonus_val <= 50:
+                    bonus = bonus_val
+
+            # Normalize date format
+            normalized_date = self._normalize_date(date_str)
 
             return {
-                'date': date,
-                'numbers': numbers,
+                'date': normalized_date,
+                'numbers': valid_numbers,
                 'bonus': bonus,
                 'game': 'Lotto Max',
                 'source': 'WCLC_PDF_Archive'
             }
 
         return None
+
+    def _normalize_date(self, date_str: str) -> str:
+        """Convert various date formats to consistent YYYY-MM-DD format"""
+        if not date_str or date_str.lower() in ['unknown', 'nan', 'nat']:
+            return 'Unknown'
+
+        date_str = date_str.strip()
+
+        # Common date formats to try
+        date_formats = [
+            '%Y-%m-%d',         # 2024-06-15
+            '%Y/%m/%d',         # 2024/06/15
+            '%B %d, %Y',        # June 15, 2024
+            '%b %d, %Y',        # Jun 15, 2024
+            '%d %B %Y',         # 15 June 2024
+            '%d %b %Y',         # 15 Jun 2024
+            '%b %d %Y',         # Jun 15 2024
+            '%B %d %Y',         # June 15 2024
+            '%m/%d/%Y',         # 06/15/2024
+            '%d/%m/%Y',         # 15/06/2024
+        ]
+
+        for fmt in date_formats:
+            try:
+                parsed_date = datetime.strptime(date_str, fmt)
+                return parsed_date.strftime('%Y-%m-%d')
+            except ValueError:
+                continue
+
+        # If no format works, log warning and return original
+        self.logger.warning(f"Could not parse date format: '{date_str}'")
+        return date_str
 
     def _normalize_to_csv_format(self, df: pd.DataFrame) -> pd.DataFrame:
         """Convert PDF data to match existing CSV structure"""
