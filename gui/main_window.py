@@ -17,9 +17,17 @@ from datetime import datetime
 
 # For matplotlib integration
 import matplotlib
-matplotlib.use('Qt5Agg')
+matplotlib.use('Qt5Agg')  # Set backend before importing pyplot
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+import logging
+
+# Suppress matplotlib font warnings
+logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
+
+# Import embedded chart widgets
+from gui.chart_widgets import EmbeddedChartWidget
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -227,6 +235,18 @@ class SaskatoonLottoPredictor(QMainWindow):
 
         # Create status bar
         self.create_status_bar()
+
+    def setup_embedded_charts(self):
+        """Setup embedded chart widgets instead of layout"""
+        # Create embedded chart widgets for analytics tab
+        self.frequency_chart_widget = EmbeddedChartWidget()
+        self.trend_chart_widget = EmbeddedChartWidget()
+
+        # Add to your existing analytics layout
+        # (Replace wherever you had self.charts_layout)
+        if hasattr(self, 'charts_layout'):
+            self.charts_layout.addWidget(self.frequency_chart_widget)
+            self.charts_layout.addWidget(self.trend_chart_widget)
 
     def create_toolbar(self, parent_layout):
         """Create top toolbar with main actions"""
@@ -472,15 +492,14 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.historical_tab = QWidget()
         historical_layout = QVBoxLayout(self.historical_tab)
 
-        self.frequency_chart_label = QLabel("Loading number frequency chart...")
-        self.frequency_chart_label.setAlignment(Qt.AlignCenter)
-        self.frequency_chart_label.setMinimumHeight(300)
-        historical_layout.addWidget(self.frequency_chart_label)
+        # Create embedded chart widgets for frequency and trend charts
+        self.frequency_chart_widget = EmbeddedChartWidget()
+        self.frequency_chart_widget.setMinimumHeight(300)
+        historical_layout.addWidget(self.frequency_chart_widget)
 
-        self.trend_chart_label = QLabel("Loading trend analysis chart...")
-        self.trend_chart_label.setAlignment(Qt.AlignCenter)
-        self.trend_chart_label.setMinimumHeight(300)
-        historical_layout.addWidget(self.trend_chart_label)
+        self.trend_chart_widget = EmbeddedChartWidget()
+        self.trend_chart_widget.setMinimumHeight(300)
+        historical_layout.addWidget(self.trend_chart_widget)
 
         self.analytics_tabs.addTab(self.historical_tab, "📊 Historical Data")
 
@@ -488,15 +507,14 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.performance_tab = QWidget()
         performance_layout = QVBoxLayout(self.performance_tab)
 
-        self.performance_chart_label = QLabel("Loading prediction performance chart...")
-        self.performance_chart_label.setAlignment(Qt.AlignCenter)
-        self.performance_chart_label.setMinimumHeight(300)
-        performance_layout.addWidget(self.performance_chart_label)
+        # Create embedded chart widgets for performance charts
+        self.performance_chart_widget = EmbeddedChartWidget()
+        self.performance_chart_widget.setMinimumHeight(300)
+        performance_layout.addWidget(self.performance_chart_widget)
 
-        self.strategy_chart_label = QLabel("Loading strategy comparison chart...")
-        self.strategy_chart_label.setAlignment(Qt.AlignCenter)
-        self.strategy_chart_label.setMinimumHeight(300)
-        performance_layout.addWidget(self.strategy_chart_label)
+        self.strategy_chart_widget = EmbeddedChartWidget()
+        self.strategy_chart_widget.setMinimumHeight(300)
+        performance_layout.addWidget(self.strategy_chart_widget)
 
         self.analytics_tabs.addTab(self.performance_tab, "🎯 Prediction Performance")
 
@@ -1110,7 +1128,7 @@ class SaskatoonLottoPredictor(QMainWindow):
             }
 
     def update_dashboard(self):
-        """Update dashboard with current game data"""
+        """Update dashboard with current game statistics"""
         try:
             # Update data status first
             self.update_data_status()
@@ -1122,17 +1140,35 @@ class SaskatoonLottoPredictor(QMainWindow):
             current_game = getattr(self, 'current_game', '649')
             stats = self.process_game_stats(current_game)
 
+            # Debug output
+            print(f"SUMMARY DEBUG for {current_game}:", stats)
+
             # Update Quick Stats box title to show which game
             self.stats_group.setTitle(f"🔥 Quick Stats for {stats['game_display_name']}")
 
-            # Update summary labels
+            # Update basic stats
             self.total_draws_label.setText(f"Total Draws: {stats['total_draws']:,}")
             self.date_range_label.setText(f"Date Range: {stats['date_range']}")
             self.last_updated_label.setText(f"Last Updated: {stats['last_updated']}")
 
-            # Update hot/cold numbers
-            self.hot_numbers_label.setText(stats['hot_numbers'])
-            self.cold_numbers_label.setText(stats['cold_numbers'])
+            # Hot/Cold numbers with fallbacks
+            hot_numbers = stats.get('hot_numbers', '')
+            cold_numbers = stats.get('cold_numbers', '')
+
+            if hot_numbers and hot_numbers != 'No data':
+                self.hot_numbers_label.setText(f"Hot: {hot_numbers}")
+            else:
+                self.hot_numbers_label.setText("Hot: (No data)")
+
+            if cold_numbers and cold_numbers != 'No data':
+                self.cold_numbers_label.setText(f"Cold: {cold_numbers}")
+            else:
+                self.cold_numbers_label.setText("Cold: (No data)")
+
+            # Recent draws count
+            recent_count = stats.get('recent_draws', 0)
+            if 'recent_draws' in stats:
+                self.recent_draws_label.setText(f"Recent: {recent_count}")
 
             # Update recent activity
             self.recent_activity_text.clear()
@@ -1143,9 +1179,9 @@ class SaskatoonLottoPredictor(QMainWindow):
             logger.error(f"Error updating dashboard: {e}")
             self.status_bar.showMessage(f"Error loading data: {e}")
 
-            # Set default values in case of error
-            self.hot_numbers_label.setText("No data")
-            self.cold_numbers_label.setText("No data")
+            # Set fallback values
+            self.hot_numbers_label.setText("Hot: (Error)")
+            self.cold_numbers_label.setText("Cold: (Error)")
             self.recent_activity_text.clear()
             self.recent_activity_text.append("⚠️ Error loading data. Please try refreshing.")
 
@@ -1328,132 +1364,125 @@ class SaskatoonLottoPredictor(QMainWindow):
     def update_analytics_insights(self, game: str):
         """Update the insights summary bar"""
         try:
-            insights = self.analytics_engine.get_prediction_insights(game)
+            # Get basic game summary
+            summary = self.data_manager.get_game_summary(game)
 
-            self.total_predictions_label.setText(
-                f"📈 Total Predictions: {insights.get('total_predictions', 0)}"
-            )
+            # Update prediction performance first
+            self.update_prediction_performance()
 
-            best_strategy = insights.get('best_strategy')
-            if best_strategy:
-                self.best_strategy_label.setText(
-                    f"🏆 Best Strategy: {best_strategy['name'].title()} "
-                    f"({best_strategy['win_rate']:.1f}% win rate)"
-                )
-            else:
-                self.best_strategy_label.setText("🏆 Best Strategy: No data yet")
+            # Build insights text
+            insights = f"📊 ANALYTICS INSIGHTS - {game.upper()}\n\n"
 
-            win_rate = insights.get('overall_win_rate', 0)
-            self.win_rate_label.setText(f"🎯 Overall Win Rate: {win_rate:.1f}%")
+            # Basic stats
+            insights += f"📈 DATA OVERVIEW:\n"
+            insights += f"• Total Draws: {summary.get('total_draws', 0):,}\n"
+            insights += f"• Date Range: {summary.get('date_range', 'Unknown')}\n"
+            insights += f"• Last Updated: {summary.get('last_updated', 'Never')}\n\n"
+
+            # Hot/Cold analysis
+            hot_numbers = summary.get('most_frequent_numbers', [])
+            cold_numbers = summary.get('least_frequent_numbers', [])
+
+            if hot_numbers:
+                insights += f"🔥 HOT NUMBERS (Most Frequent):\n"
+                insights += f"• {', '.join(map(str, hot_numbers[:6]))}\n\n"
+
+            if cold_numbers:
+                insights += f"🧊 COLD NUMBERS (Least Frequent):\n" 
+                insights += f"• {', '.join(map(str, cold_numbers[:6]))}\n\n"
+
+            # Set the insights text (prediction performance will be added by update_prediction_performance)
+            if hasattr(self, 'analytics_insights_text'):
+                self.analytics_insights_text.setPlainText(insights)
 
         except Exception as e:
-            logger.error(f"Failed to update insights: {e}")
+            logger.error(f"Failed to update analytics insights: {e}")
 
     def update_historical_charts(self, game: str):
-        """Update historical data analysis charts"""
+        """Update historical charts with bulletproof embedded display"""
         try:
-            import io
-            import base64
-            from matplotlib.backends.backend_agg import FigureCanvasAgg
-            import matplotlib.pyplot as plt
+            logger.info(f"Updating historical charts for {game}")
 
-            # Generate frequency chart
-            plt.figure(figsize=(10, 6))
-            self.analytics_engine.plot_number_frequency(game)
+            # Get analytics instance
+            analytics = get_analytics_engine()
 
-            # Convert to image for display
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-            buf.seek(0)
+            # Update frequency chart
+            try:
+                frequency_fig = analytics.plot_number_frequency(game)
+                self.frequency_chart_widget.display_figure(frequency_fig)
 
-            pixmap = QPixmap()
-            pixmap.loadFromData(buf.getvalue())
+                # CRITICAL: Close the figure to prevent memory leaks and popup windows
+                plt.close(frequency_fig)
 
-            self.frequency_chart_label.setPixmap(
-                pixmap.scaled(800, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            )
-            self.frequency_chart_label.setText("")
+            except Exception as e:
+                logger.error(f"Failed to create frequency chart: {e}")
+                self.frequency_chart_widget.display_error(f"Frequency Chart Error: {e}")
 
-            plt.close()
-            buf.close()
+            # Update trend chart
+            try:
+                trend_fig = analytics.plot_trend_analysis(game)
+                self.trend_chart_widget.display_figure(trend_fig)
 
-            # Generate trend chart
-            plt.figure(figsize=(10, 6))
-            self.analytics_engine.plot_trend_analysis(game)
+                # CRITICAL: Close the figure to prevent memory leaks and popup windows
+                plt.close(trend_fig)
 
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-            buf.seek(0)
+            except Exception as e:
+                logger.error(f"Failed to create trend chart: {e}")
+                self.trend_chart_widget.display_error(f"Trend Chart Error: {e}")
 
-            pixmap = QPixmap()
-            pixmap.loadFromData(buf.getvalue())
-
-            self.trend_chart_label.setPixmap(
-                pixmap.scaled(800, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            )
-            self.trend_chart_label.setText("")
-
-            plt.close()
-            buf.close()
+            logger.info("Historical charts updated successfully")
 
         except Exception as e:
             logger.error(f"Failed to update historical charts: {e}")
-            self.frequency_chart_label.setText(f"Error loading charts: {e}")
+            # Show error in both widgets
+            error_msg = f"Chart Update Error: {e}"
+            if hasattr(self, 'frequency_chart_widget'):
+                self.frequency_chart_widget.display_error(error_msg)
+            if hasattr(self, 'trend_chart_widget'):
+                self.trend_chart_widget.display_error(error_msg)
 
     def update_performance_charts(self, game: str):
-        """Update prediction performance charts"""
+        """Update prediction performance charts with embedded display"""
         try:
-            import io
-            from matplotlib.backends.backend_agg import FigureCanvasAgg
-            import matplotlib.pyplot as plt
+            logger.info(f"Updating performance charts for {game}")
 
-            # Generate prediction performance chart
-            plt.figure(figsize=(10, 6))
-            self.analytics_engine.plot_prediction_performance(game)
+            # Get analytics instance
+            analytics = get_analytics_engine()
 
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-            buf.seek(0)
+            # Update prediction performance chart
+            try:
+                performance_fig = analytics.plot_prediction_performance(game)
+                self.performance_chart_widget.display_figure(performance_fig)
 
-            pixmap = QPixmap()
-            pixmap.loadFromData(buf.getvalue())
+                # CRITICAL: Close the figure to prevent memory leaks and popup windows
+                plt.close(performance_fig)
 
-            if not pixmap.isNull():
-                self.performance_chart_label.setPixmap(
-                    pixmap.scaled(800, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                )
-                self.performance_chart_label.setText("")
-            else:
-                self.performance_chart_label.setText("No prediction performance data available yet")
+            except Exception as e:
+                logger.error(f"Failed to create performance chart: {e}")
+                self.performance_chart_widget.display_error(f"Performance Chart Error: {e}")
 
-            plt.close()
-            buf.close()
+            # Update strategy comparison chart
+            try:
+                strategy_fig = analytics.plot_strategy_comparison()
+                self.strategy_chart_widget.display_figure(strategy_fig)
 
-            # Generate strategy comparison chart
-            plt.figure(figsize=(12, 4))
-            self.analytics_engine.plot_strategy_comparison()
+                # CRITICAL: Close the figure to prevent memory leaks and popup windows
+                plt.close(strategy_fig)
 
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-            buf.seek(0)
+            except Exception as e:
+                logger.error(f"Failed to create strategy chart: {e}")
+                self.strategy_chart_widget.display_error(f"Strategy Chart Error: {e}")
 
-            pixmap = QPixmap()
-            pixmap.loadFromData(buf.getvalue())
-
-            if not pixmap.isNull():
-                self.strategy_chart_label.setPixmap(
-                    pixmap.scaled(900, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                )
-                self.strategy_chart_label.setText("")
-            else:
-                self.strategy_chart_label.setText("No strategy comparison data available yet")
-
-            plt.close()
-            buf.close()
+            logger.info("Performance charts updated successfully")
 
         except Exception as e:
             logger.error(f"Failed to update performance charts: {e}")
-            self.performance_chart_label.setText("No prediction data available - make some predictions first!")
+            # Show error in both widgets
+            error_msg = f"Chart Update Error: {e}"
+            if hasattr(self, 'performance_chart_widget'):
+                self.performance_chart_widget.display_error(error_msg)
+            if hasattr(self, 'strategy_chart_widget'):
+                self.strategy_chart_widget.display_error(error_msg)
 
     def export_analytics_data(self):
         """Export analytics data to CSV"""
@@ -1510,7 +1539,7 @@ class SaskatoonLottoPredictor(QMainWindow):
             self.on_prediction_error(str(e))
 
     def on_prediction_ready(self, prediction):
-        """Handle successful prediction generation"""
+        """Handle prediction result and log it"""
         try:
             self.current_prediction = prediction
 
@@ -1570,11 +1599,21 @@ class SaskatoonLottoPredictor(QMainWindow):
             self.copy_btn.setEnabled(True)
             self.save_btn.setEnabled(True)
 
-            # Log prediction
-            self.prediction_logger.log_prediction(prediction)
+            # LOG THE PREDICTION for tracking
+            game = self.get_current_game_code()
+            strategy = prediction.get('strategy', 'unknown')
+            timestamp = self.prediction_logger.log_prediction(strategy, game, numbers)
+
+            # Add to activity log
+            self.add_activity_message(
+                f"📊 Prediction logged: {strategy} strategy → {numbers} (ID: {timestamp[-8:]})"
+            )
 
             # Update performance display
             self.update_performance_display()
+
+            # Update prediction performance
+            self.update_prediction_performance()
 
             # Update strategy dashboard if it exists
             if hasattr(self, 'strategy_dashboard'):
@@ -1656,8 +1695,90 @@ class SaskatoonLottoPredictor(QMainWindow):
         )
 
         if ok:
-            self.prediction_logger.log_prediction(self.current_prediction, notes)
+            # Get prediction details
+            game = self.current_prediction.get('game', self.get_current_game_code())
+            strategy = self.current_prediction.get('strategy', 'unknown')
+            numbers = self.current_prediction.get('predicted_numbers', [])
+
+            # Log with new method signature
+            timestamp = self.prediction_logger.log_prediction(strategy, game, numbers)
+
+            # Add to activity log with notes
+            self.add_activity_message(
+                f"💾 Prediction saved: {strategy} for {game} - {numbers} - Notes: {notes}"
+            )
+
             self.strategy_info.setText("💾 Prediction saved with notes!")
+
+    def update_prediction_performance(self):
+        """Update prediction performance display in analytics tab"""
+        try:
+            # First, evaluate any pending predictions
+            self.prediction_logger.evaluate_predictions(self.data_manager)
+
+            # Get performance data
+            game = self.get_current_game_code()
+            recent_predictions = self.prediction_logger.get_recent_predictions(game, days=30)
+            performance_summary = self.prediction_logger.get_performance_summary()
+
+            # Update analytics insights to include prediction performance
+            if hasattr(self, 'analytics_insights_text'):
+                insights_text = self.analytics_insights_text.toPlainText()
+
+                # Add prediction performance section
+                perf_text = f"\n\n🎯 PREDICTION PERFORMANCE:\n"
+                perf_text += f"• Total Predictions: {performance_summary['total_predictions']}\n"
+                perf_text += f"• Evaluated: {performance_summary['evaluated_predictions']}\n"
+                perf_text += f"• Wins: {performance_summary['total_wins']}\n"
+                perf_text += f"• Win Rate: {performance_summary['overall_win_rate']:.1f}%\n"
+
+                if performance_summary['best_strategy']:
+                    best = performance_summary['best_strategy']
+                    perf_text += f"• Best Strategy: {best['name']} ({best['win_rate']:.1f}% win rate)\n"
+
+                # Show recent predictions
+                if recent_predictions:
+                    perf_text += f"\n📋 RECENT PREDICTIONS ({len(recent_predictions)} last 30 days):\n"
+                    for i, pred in enumerate(recent_predictions[:5]):  # Show last 5
+                        status = "✅ WIN" if pred.get('did_win') else "❌ MISS"
+                        matches = pred.get('match_count', 0) if pred.get('evaluated') else "Pending"
+                        date = pred['timestamp'][:10]
+                        perf_text += f"• {date}: {pred['predicted_numbers']} - {status} ({matches} matches)\n"
+
+                # Update the insights text
+                if "🎯 PREDICTION PERFORMANCE:" in insights_text:
+                    # Replace existing performance section
+                    parts = insights_text.split("🎯 PREDICTION PERFORMANCE:")
+                    insights_text = parts[0] + perf_text
+                else:
+                    # Add new performance section
+                    insights_text += perf_text
+
+                self.analytics_insights_text.setPlainText(insights_text)
+
+        except Exception as e:
+            logger.error(f"Error updating prediction performance: {e}")
+
+    def add_activity_message(self, message):
+        """Add a message to the recent activity log"""
+        try:
+            if hasattr(self, 'recent_activity_text'):
+                # Add timestamp to message
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                formatted_message = f"[{timestamp}] {message}"
+
+                # Add to activity log
+                self.recent_activity_text.append(formatted_message)
+
+                # Scroll to bottom to show latest message
+                self.recent_activity_text.verticalScrollBar().setValue(
+                    self.recent_activity_text.verticalScrollBar().maximum()
+                )
+
+                # Also log to application log
+                logger.info(f"Activity: {message}")
+        except Exception as e:
+            logger.error(f"Failed to add activity message: {e}")
 
     def update_performance_display(self):
         """Update the performance display with recent statistics"""

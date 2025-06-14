@@ -1,278 +1,232 @@
-import csv
-import sqlite3
 import json
+import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
-from pathlib import Path
+from typing import List, Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
+class PredictionRecord:
+    """Individual prediction record with outcome tracking"""
+
+    def __init__(self, strategy: str, game: str, predicted_numbers: List[int], 
+                 timestamp: str = None, actual_numbers: List[int] = None):
+        self.strategy = strategy
+        self.game = game
+        self.predicted_numbers = predicted_numbers
+        self.timestamp = timestamp or datetime.now().isoformat()
+        self.actual_numbers = actual_numbers or []
+        self.match_count = None
+        self.did_win = False
+        self.evaluated = False
+
+        # Auto-evaluate if we have actual numbers
+        if actual_numbers:
+            self.evaluate_prediction(actual_numbers)
+
+    def evaluate_prediction(self, actual_numbers: List[int]):
+        """Evaluate prediction against actual draw results"""
+        if not actual_numbers:
+            return
+
+        self.actual_numbers = actual_numbers
+        self.match_count = len(set(self.predicted_numbers) & set(actual_numbers))
+        self.did_win = self.match_count >= 3  # Adjust win criteria as needed
+        self.evaluated = True
+
+    def to_dict(self) -> Dict:
+        """Convert to dictionary for JSON storage"""
+        return {
+            'strategy': self.strategy,
+            'game': self.game,
+            'predicted_numbers': self.predicted_numbers,
+            'timestamp': self.timestamp,
+            'actual_numbers': self.actual_numbers,
+            'match_count': self.match_count,
+            'did_win': self.did_win,
+            'evaluated': self.evaluated
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict):
+        """Create from dictionary"""
+        record = cls(
+            strategy=data['strategy'],
+            game=data['game'],
+            predicted_numbers=data['predicted_numbers'],
+            timestamp=data['timestamp'],
+            actual_numbers=data.get('actual_numbers', [])
+        )
+        record.match_count = data.get('match_count')
+        record.did_win = data.get('did_win', False)
+        record.evaluated = data.get('evaluated', False)
+        return record
+
+
 class PredictionLogger:
-    """Logs and tracks all predictions for performance analysis"""
-    
-    def __init__(self, log_file: str = "data/predictions.csv", db_file: str = "data/predictions.db"):
-        self.log_file = Path(log_file)
-        self.db_file = Path(db_file)
-        
-        # Ensure directories exist
-        self.log_file.parent.mkdir(parents=True, exist_ok=True)
-        self.db_file.parent.mkdir(parents=True, exist_ok=True)
-        
-        self._init_csv()
-        self._init_database()
-    
-    def _init_csv(self):
-        """Initialize CSV file with headers if it doesn't exist"""
-        if not self.log_file.exists():
-            headers = [
-                'timestamp', 'game', 'numbers', 'strategy', 'strategy_name',
-                'confidence', 'confidence_stars', 'data_draws_count', 'version',
-                'user_notes', 'is_winner', 'matches_count', 'tier_won'
-            ]
-            
-            with open(self.log_file, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow(headers)
-    
-    def _init_database(self):
-        """Initialize SQLite database with predictions table"""
-        with sqlite3.connect(self.db_file) as conn:
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS predictions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TEXT NOT NULL,
-                    game TEXT NOT NULL,
-                    numbers TEXT NOT NULL,
-                    strategy TEXT NOT NULL,
-                    strategy_name TEXT,
-                    confidence REAL,
-                    confidence_stars INTEGER,
-                    data_draws_count INTEGER,
-                    version TEXT,
-                    user_notes TEXT,
-                    is_winner BOOLEAN DEFAULT 0,
-                    matches_count INTEGER DEFAULT 0,
-                    tier_won TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
-            # Create index for faster queries
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON predictions(timestamp)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_game ON predictions(game)')
-            conn.commit()
-    
-    def log_prediction(self, prediction: Dict, user_notes: str = ""):
-        """Log a prediction to both CSV and database"""
+    """Manages prediction history and performance tracking"""
+
+    def __init__(self, data_dir: str = "data"):
+        self.data_dir = data_dir
+        self.predictions_file = os.path.join(data_dir, "prediction_history.json")
+        self.logger = logging.getLogger(__name__)
+        self.predictions: List[PredictionRecord] = []
+
+        # Ensure data directory exists
+        os.makedirs(data_dir, exist_ok=True)
+
+        # Load existing predictions
+        self.load_predictions()
+
+    def log_prediction(self, strategy: str, game: str, predicted_numbers: List[int]) -> str:
+        """Log a new prediction"""
+        record = PredictionRecord(strategy, game, predicted_numbers)
+        self.predictions.append(record)
+        self.save_predictions()
+
+        self.logger.info(f"Logged prediction: {strategy} for {game} - {predicted_numbers}")
+        return record.timestamp
+
+    def evaluate_predictions(self, data_manager):
+        """Evaluate pending predictions against recent draws"""
         try:
-            # Prepare data
-            numbers_str = json.dumps(prediction['numbers'])
-            timestamp = prediction['timestamp']
-            
-            # Log to CSV
-            row = [
-                timestamp,
-                prediction['game'],
-                numbers_str,
-                prediction['strategy'],
-                prediction.get('strategy_name', ''),
-                prediction['confidence'],
-                prediction['confidence_stars'],
-                prediction.get('data_draws_count', 0),
-                prediction.get('version', '1.0'),
-                user_notes,
-                '',  # is_winner - filled later
-                '',  # matches_count - filled later
-                ''   # tier_won - filled later
-            ]
-            
-            with open(self.log_file, 'a', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow(row)
-            
-            # Log to database
-            with sqlite3.connect(self.db_file) as conn:
-                conn.execute('''
-                    INSERT INTO predictions 
-                    (timestamp, game, numbers, strategy, strategy_name, confidence, 
-                     confidence_stars, data_draws_count, version, user_notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    timestamp, prediction['game'], numbers_str, prediction['strategy'],
-                    prediction.get('strategy_name', ''), prediction['confidence'],
-                    prediction['confidence_stars'], prediction.get('data_draws_count', 0),
-                    prediction.get('version', '1.0'), user_notes
-                ))
-                conn.commit()
-            
-            logger.info(f"Logged prediction: {prediction['game']} - {prediction['numbers']}")
-            
+            updated_count = 0
+
+            for prediction in self.predictions:
+                if prediction.evaluated:
+                    continue
+
+                # Check if we have draw results for this prediction date
+                prediction_date = datetime.fromisoformat(prediction.timestamp.split('T')[0])
+
+                # Get recent draws for this game
+                game_data = data_manager.load_game_data(prediction.game)
+                if game_data.empty:
+                    continue
+
+                # Look for draws after the prediction date
+                recent_draws = game_data[
+                    game_data['date_parsed'] > prediction_date
+                ].sort_values('date_parsed')
+
+                if not recent_draws.empty:
+                    # Use the first draw after prediction
+                    latest_draw = recent_draws.iloc[0]
+                    actual_numbers = latest_draw.get('numbers_list', [])
+
+                    if actual_numbers:
+                        prediction.evaluate_prediction(actual_numbers)
+                        updated_count += 1
+
+            if updated_count > 0:
+                self.save_predictions()
+                self.logger.info(f"Evaluated {updated_count} predictions")
+
         except Exception as e:
-            logger.error(f"Failed to log prediction: {e}")
-    
+            self.logger.error(f"Error evaluating predictions: {e}")
+
     def get_recent_predictions(self, game: str = None, days: int = 30) -> List[Dict]:
-        """Get recent predictions for analysis"""
-        try:
-            with sqlite3.connect(self.db_file) as conn:
-                conn.row_factory = sqlite3.Row
-                
-                cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
-                
-                if game:
-                    cursor = conn.execute('''
-                        SELECT * FROM predictions 
-                        WHERE game = ? AND timestamp >= ? 
-                        ORDER BY timestamp DESC
-                    ''', (game, cutoff_date))
-                else:
-                    cursor = conn.execute('''
-                        SELECT * FROM predictions 
-                        WHERE timestamp >= ? 
-                        ORDER BY timestamp DESC
-                    ''', (cutoff_date,))
-                
-                predictions = []
-                for row in cursor:
-                    pred = dict(row)
-                    pred['numbers'] = json.loads(pred['numbers'])
-                    predictions.append(pred)
-                
-                return predictions
-                
-        except Exception as e:
-            logger.error(f"Failed to get recent predictions: {e}")
-            return []
-    
-    def update_prediction_outcome(self, prediction_id: int, actual_numbers: List[int]) -> Dict:
-        """Update prediction with actual draw results"""
-        try:
-            with sqlite3.connect(self.db_file) as conn:
-                conn.row_factory = sqlite3.Row
-                
-                # Get the prediction
-                cursor = conn.execute('SELECT * FROM predictions WHERE id = ?', (prediction_id,))
-                prediction = cursor.fetchone()
-                
-                if not prediction:
-                    raise ValueError(f"Prediction {prediction_id} not found")
-                
-                predicted_numbers = set(json.loads(prediction['numbers']))
-                actual_numbers_set = set(actual_numbers)
-                
-                # Calculate matches
-                matches = predicted_numbers.intersection(actual_numbers_set)
-                matches_count = len(matches)
-                
-                # Determine if winner and tier
-                is_winner = matches_count >= 2  # Minimum for any prize
-                tier_won = self._determine_tier(matches_count, prediction['game'])
-                
-                # Update database
-                conn.execute('''
-                    UPDATE predictions 
-                    SET is_winner = ?, matches_count = ?, tier_won = ?
-                    WHERE id = ?
-                ''', (is_winner, matches_count, tier_won, prediction_id))
-                conn.commit()
-                
-                result = {
-                    'prediction_id': prediction_id,
-                    'matches_count': matches_count,
-                    'matches': list(matches),
-                    'is_winner': is_winner,
-                    'tier_won': tier_won
+        """Get recent predictions with optional game filter"""
+        cutoff_date = datetime.now() - timedelta(days=days)
+
+        recent = []
+        for pred in self.predictions:
+            pred_date = datetime.fromisoformat(pred.timestamp.split('T')[0])
+            if pred_date >= cutoff_date:
+                if game is None or pred.game == game:
+                    recent.append(pred.to_dict())
+
+        return sorted(recent, key=lambda x: x['timestamp'], reverse=True)
+
+    def get_strategy_performance(self, days: int = 30) -> Dict:
+        """Get performance statistics by strategy"""
+        recent_predictions = self.get_recent_predictions(days=days)
+
+        performance = {}
+        for pred in recent_predictions:
+            if not pred['evaluated']:
+                continue
+
+            strategy = pred['strategy']
+            if strategy not in performance:
+                performance[strategy] = {
+                    'total_predictions': 0,
+                    'wins': 0,
+                    'total_matches': 0,
+                    'win_rate': 0,
+                    'avg_matches': 0
                 }
-                
-                logger.info(f"Updated prediction {prediction_id}: {matches_count} matches, tier: {tier_won}")
-                return result
-                
-        except Exception as e:
-            logger.error(f"Failed to update prediction outcome: {e}")
-            return {}
-    
-    def _determine_tier(self, matches_count: int, game: str) -> str:
-        """Determine prize tier based on matches"""
-        if game == '649':
-            tiers = {
-                6: "Jackpot",
-                5: "Second Prize", 
-                4: "Third Prize",
-                3: "Fourth Prize",
-                2: "Free Play"
-            }
-        else:  # Lotto Max
-            tiers = {
-                7: "Jackpot",
-                6: "Second Prize",
-                5: "Third Prize", 
-                4: "Fourth Prize",
-                3: "Fifth Prize"
-            }
-        
-        return tiers.get(matches_count, "No Prize")
-    
-    def get_strategy_performance(self, days: int = 90) -> Dict:
-        """Analyze performance by strategy"""
+
+            stats = performance[strategy]
+            stats['total_predictions'] += 1
+            stats['total_matches'] += pred.get('match_count', 0)
+            if pred.get('did_win', False):
+                stats['wins'] += 1
+
+        # Calculate rates
+        for strategy, stats in performance.items():
+            if stats['total_predictions'] > 0:
+                stats['win_rate'] = (stats['wins'] / stats['total_predictions']) * 100
+                stats['avg_matches'] = stats['total_matches'] / stats['total_predictions']
+
+        return performance
+
+    def load_predictions(self):
+        """Load predictions from JSON file"""
+        if not os.path.exists(self.predictions_file):
+            return
+
         try:
-            with sqlite3.connect(self.db_file) as conn:
-                conn.row_factory = sqlite3.Row
-                
-                cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
-                
-                cursor = conn.execute('''
-                    SELECT strategy, COUNT(*) as total_predictions,
-                           AVG(confidence) as avg_confidence,
-                           SUM(CASE WHEN is_winner = 1 THEN 1 ELSE 0 END) as wins,
-                           AVG(matches_count) as avg_matches
-                    FROM predictions 
-                    WHERE timestamp >= ?
-                    GROUP BY strategy
-                ''', (cutoff_date,))
-                
-                performance = {}
-                for row in cursor:
-                    strategy = row['strategy']
-                    total = row['total_predictions']
-                    
-                    performance[strategy] = {
-                        'total_predictions': total,
-                        'avg_confidence': round(row['avg_confidence'] or 0, 3),
-                        'wins': row['wins'] or 0,
-                        'win_rate': round((row['wins'] or 0) / total * 100, 1) if total > 0 else 0,
-                        'avg_matches': round(row['avg_matches'] or 0, 2)
-                    }
-                
-                return performance
-                
+            with open(self.predictions_file, 'r') as f:
+                data = json.load(f)
+                self.predictions = [PredictionRecord.from_dict(item) for item in data]
+
+            self.logger.info(f"Loaded {len(self.predictions)} prediction records")
+
         except Exception as e:
-            logger.error(f"Failed to get strategy performance: {e}")
-            return {}
-    
-    def export_predictions_csv(self, output_file: str, game: str = None, days: int = None) -> bool:
-        """Export predictions to CSV file"""
+            self.logger.error(f"Error loading predictions: {e}")
+            self.predictions = []
+
+    def save_predictions(self):
+        """Save predictions to JSON file"""
         try:
-            predictions = self.get_recent_predictions(game, days or 365)
-            
-            with open(output_file, 'w', newline='', encoding='utf-8') as f:
-                if not predictions:
-                    return False
-                
-                # Write headers
-                headers = list(predictions[0].keys())
-                writer = csv.DictWriter(f, fieldnames=headers)
-                writer.writeheader()
-                
-                # Write data
-                for pred in predictions:
-                    # Convert numbers list to string for CSV
-                    pred_copy = pred.copy()
-                    pred_copy['numbers'] = json.dumps(pred['numbers'])
-                    writer.writerow(pred_copy)
-            
-            logger.info(f"Exported {len(predictions)} predictions to {output_file}")
-            return True
-            
+            data = [pred.to_dict() for pred in self.predictions]
+            with open(self.predictions_file, 'w') as f:
+                json.dump(data, f, indent=2)
+
         except Exception as e:
-            logger.error(f"Failed to export predictions: {e}")
-            return False
+            self.logger.error(f"Error saving predictions: {e}")
+
+    def get_performance_summary(self) -> Dict:
+        """Get overall performance summary"""
+        if not self.predictions:
+            return {
+                'total_predictions': 0,
+                'evaluated_predictions': 0,
+                'total_wins': 0,
+                'overall_win_rate': 0,
+                'best_strategy': None
+            }
+
+        evaluated = [p for p in self.predictions if p.evaluated]
+        wins = [p for p in evaluated if p.did_win]
+
+        summary = {
+            'total_predictions': len(self.predictions),
+            'evaluated_predictions': len(evaluated),
+            'total_wins': len(wins),
+            'overall_win_rate': (len(wins) / len(evaluated) * 100) if evaluated else 0,
+            'best_strategy': None
+        }
+
+        # Find best strategy
+        strategy_performance = self.get_strategy_performance(days=365)  # All time
+        if strategy_performance:
+            best_strategy = max(strategy_performance.items(), 
+                              key=lambda x: x[1]['win_rate'])
+            summary['best_strategy'] = {
+                'name': best_strategy[0],
+                'win_rate': best_strategy[1]['win_rate']
+            }
+
+        return summary

@@ -10,6 +10,7 @@ IMPLEMENTATION STRATEGY:
 
 import os
 import pandas as pd
+import numpy as np
 from typing import Dict, List, Optional, Union
 import logging
 from datetime import datetime, timedelta
@@ -79,14 +80,27 @@ class LotteryDataManager:
 
                 # Create numbers_list column from existing numbers column
                 def normalize_numbers_for_row(numbers_value):
-                    """Convert any numbers format to list of integers"""
+                    """Enhanced normalization with list guarantee"""
                     try:
                         if pd.isna(numbers_value) or numbers_value is None:
                             return []
 
-                        # Use existing validator
+                        # CRITICAL FIX: Handle NumPy arrays explicitly
+                        import numpy as np
+                        if isinstance(numbers_value, np.ndarray):
+                            return [int(n) for n in numbers_value.tolist() if n is not None]
+
+                        # Use existing validator for other types
                         from core.data_validator import DataValidator
-                        return DataValidator.normalize_numbers_field(numbers_value)
+                        result = DataValidator.normalize_numbers_field(numbers_value)
+
+                        # Force conversion to ensure it's always a Python list
+                        if isinstance(result, np.ndarray):
+                            return [int(n) for n in result.tolist() if n is not None]
+                        elif isinstance(result, list):
+                            return [int(n) for n in result if n is not None]
+                        else:
+                            return list(result) if result else []
 
                     except Exception as e:
                         self.logger.warning(f"Failed to normalize numbers value: {numbers_value}, error: {e}")
@@ -249,6 +263,16 @@ class LotteryDataManager:
             if not data:
                 self.logger.warning(f"No data scraped for {game}")
                 return pd.DataFrame()
+
+            # CRITICAL FIX: Ensure numbers are always Python lists before creating DataFrame
+            for draw in data:
+                if 'numbers' in draw:
+                    numbers = draw['numbers']
+                    import numpy as np
+                    if isinstance(numbers, np.ndarray):
+                        draw['numbers'] = numbers.tolist()
+                    elif not isinstance(numbers, list):
+                        draw['numbers'] = list(numbers) if numbers else []
 
             # Convert to DataFrame
             df = pd.DataFrame(data)
@@ -481,17 +505,41 @@ class LotteryDataManager:
             # Load data
             data = self.load_game_data(game)
 
+            # Debug logging
+            self.logger.info(f"Loaded {len(data)} rows for game: {game}")
+
+            # Create summary with defaults
             summary = {
                 'game': game,
                 'total_draws': 0,
                 'date_range': 'No data',
                 'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'most_frequent_numbers': [],
-                'least_frequent_numbers': []
+                'least_frequent_numbers': [],
+                'recent_draws': 0
             }
 
             if data.empty:
+                self.logger.info(f"Returning empty summary for game: {game}")
                 return summary
+
+            # Extract all numbers for frequency analysis
+            all_numbers = []
+            problematic_rows = 0
+
+            for idx, row in data.iterrows():
+                try:
+                    numbers = row.get('numbers_list', [])
+                    if isinstance(numbers, np.ndarray):
+                        numbers = numbers.tolist()
+                    if isinstance(numbers, list) and numbers:
+                        all_numbers.extend(numbers)
+                except Exception as e:
+                    problematic_rows += 1
+                    self.logger.warning(f"Row {idx} has problematic numbers: {e}")
+
+            self.logger.info(f"Extracted {len(all_numbers)} total numbers from {len(data)} rows")
+            self.logger.info(f"Found {problematic_rows} problematic rows")
 
             # Update total draws
             summary['total_draws'] = len(data)
@@ -518,34 +566,22 @@ class LotteryDataManager:
                     self.logger.warning(f"Error calculating date range: {e}")
 
             # Calculate number frequencies
-            if 'numbers' in data.columns:
+            if all_numbers:
                 try:
-                    # Normalize numbers field
-                    all_numbers = []
-                    for numbers in data['numbers']:
-                        try:
-                            if isinstance(numbers, str):
-                                # Parse string representation of list
-                                if numbers.startswith('[') and numbers.endswith(']'):
-                                    nums = DataValidator.normalize_numbers_field(numbers)
-                                    all_numbers.extend(nums)
-                            elif isinstance(numbers, list):
-                                all_numbers.extend(numbers)
-                        except Exception as e:
-                            self.logger.warning(f"Error parsing numbers: {e}")
+                    # Count frequencies
+                    number_counts = {}
+                    for num in all_numbers:
+                        number_counts[num] = number_counts.get(num, 0) + 1
 
-                    if all_numbers:
-                        # Count frequencies
-                        number_counts = {}
-                        for num in all_numbers:
-                            number_counts[num] = number_counts.get(num, 0) + 1
+                    # Sort by frequency
+                    sorted_numbers = sorted(number_counts.items(), key=lambda x: x[1], reverse=True)
 
-                        # Sort by frequency
-                        sorted_numbers = sorted(number_counts.items(), key=lambda x: x[1], reverse=True)
+                    # Get most and least frequent
+                    summary['most_frequent_numbers'] = [num for num, count in sorted_numbers[:10]]
+                    summary['least_frequent_numbers'] = [num for num, count in sorted_numbers[-10:]]
 
-                        # Get most and least frequent
-                        summary['most_frequent_numbers'] = [num for num, count in sorted_numbers[:10]]
-                        summary['least_frequent_numbers'] = [num for num, count in sorted_numbers[-10:]]
+                    self.logger.info(f"Hot numbers: {summary['most_frequent_numbers'][:6]}")
+                    self.logger.info(f"Cold numbers: {summary['least_frequent_numbers'][:6]}")
                 except Exception as e:
                     self.logger.warning(f"Error calculating number frequencies: {e}")
 
@@ -557,7 +593,10 @@ class LotteryDataManager:
                 'game': game,
                 'total_draws': 0,
                 'date_range': f'Error: {e}',
-                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'most_frequent_numbers': [],
+                'least_frequent_numbers': [],
+                'recent_draws': 0
             }
 
     def refresh_all_data(self) -> None:
