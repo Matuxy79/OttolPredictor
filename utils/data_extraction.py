@@ -6,6 +6,7 @@ import ast
 import json
 import logging
 from typing import List, Any
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
