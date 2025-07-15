@@ -1,40 +1,17 @@
 """
-Saskatchewan Lotto Scraper - WCLC Integration with Batch Historical Scraping
-Multi-game lottery data extraction with robust error handling and complete history
-
-Note on HTML Structure Handling:
-The scraper is designed to handle different HTML structures across WCLC game pages.
-Some pages use class-based selectors (e.g., 'li.pastWinNumber'), while others use plain <li> elements.
-Each parse_* method includes a fallback mechanism that:
-1. First tries the class-based selector (for pages that do use it)
-2. If that returns empty, then grabs all <li>s under the block and handles them appropriately
-This ensures the scraper works across all draw-based games on the WCLC site, even when they
-omit CSS classes in their HTML structure.
-
-Note on Deduplication:
-The scraper includes robust deduplication to avoid duplicate draws when scraping historical data.
-The create_draw_fingerprint method creates a unique fingerprint for each draw based on the game,
-date, and numbers. The _normalize_numbers helper method ensures consistent fingerprints regardless
-of how the numbers are represented (list, comma-separated string, etc.).
-
-Pagination Support:
-The scraper supports full historical data extraction by following month navigation links.
-The extract_month_links method extracts links to previous months' data, and the scrape_batch_history
-method follows these links to scrape all available historical data. Use the max_months parameter
-to limit the number of months to scrape.
+Saskatchewan Lotto Data Extractor - Process lottery draw data from HTML files
+Parser for lottery draw data from saved HTML files with comprehensive game support
 """
 
 import argparse
-import requests
 import os
 import sqlite3
-import time
 import re
 from datetime import datetime
 from bs4 import BeautifulSoup
 import pandas as pd
-from urllib.parse import urljoin, urlparse
 from typing import List, Dict, Optional, Set
+import json
 from logging_config import get_logger
 from config import AppConfig
 from schema import DrawRecord, DataValidator
@@ -53,115 +30,10 @@ class DataValidationError(Exception):
 class WCLCScraper:
     """Western Canada Lottery Corporation scraper with batch historical processing"""
 
-    @staticmethod
-    def get_game_url(game: str) -> str:
-        """Get URL for a specific game using centralized configuration"""
-        url = AppConfig.get_game_url(game)
-        if not url:
-            raise WCLCScraperError(f"No URL configured for game: {game}")
-        return url
-
-    def __init__(self, max_retries=None, timeout=None):
-        """
-        Initialize WCLC scraper with configuration
-
-        Args:
-            max_retries (int): Maximum number of retry attempts (defaults to AppConfig.SCRAPER_RETRIES)
-            timeout (int): Request timeout in seconds (defaults to AppConfig.SCRAPER_TIMEOUT)
-        """
-        self.max_retries = max_retries if max_retries is not None else AppConfig.SCRAPER_RETRIES
-        self.timeout = timeout if timeout is not None else AppConfig.SCRAPER_TIMEOUT
-        self.session = requests.Session()
-        self.session.headers.update(AppConfig.HTTP_HEADERS)
-
-        # Track processed URLs to avoid duplicates
-        self.processed_urls: Set[str] = set()
+    def __init__(self):
+        """Initialize WCLC scraper"""
+        # Track processed data to avoid duplicates
         self.duplicate_draws: Set[str] = set()
-
-    def fetch_html_with_retry(self, url: str, save_file: Optional[str] = None) -> str:
-        """
-        Fetch HTML from URL with retry logic and proper error handling
-
-        Args:
-            url (str): URL to fetch
-            save_file (str): Optional file path to save HTML
-
-        Returns:
-            str: HTML content
-
-        Raises:
-            WCLCScraperError: If all retry attempts fail
-        """
-        last_exception = None
-
-        for attempt in range(self.max_retries):
-            try:
-                logger.info(f"Fetching HTML from: {url} (attempt {attempt + 1}/{self.max_retries})")
-
-                response = self.session.get(url, timeout=self.timeout)
-                response.raise_for_status()
-
-                # Check if response looks like HTML
-                content_type = response.headers.get('content-type', '').lower()
-                if 'html' not in content_type:
-                    logger.warning(f"Unexpected content type: {content_type}")
-
-                html = response.text
-
-                # Basic validation - check if HTML contains lottery-related content
-                if not self._validate_html_content(html):
-                    raise WCLCScraperError("HTML content doesn't appear to contain lottery data")
-
-                if save_file:
-                    with open(save_file, 'w', encoding='utf-8') as f:
-                        f.write(html)
-                    logger.info(f"HTML saved to: {save_file}")
-
-                logger.info(f"Successfully fetched HTML ({len(html)} characters)")
-                return html
-
-            except requests.exceptions.Timeout as e:
-                last_exception = e
-                logger.warning(f"Timeout on attempt {attempt + 1}: {e}")
-                time.sleep(2 ** attempt)  # Exponential backoff
-
-            except requests.exceptions.ConnectionError as e:
-                last_exception = e
-                logger.warning(f"Connection error on attempt {attempt + 1}: {e}")
-                time.sleep(2 ** attempt)
-
-            except requests.exceptions.HTTPError as e:
-                last_exception = e
-                if e.response.status_code in [503, 502, 504]:  # Server errors - retry
-                    logger.warning(f"Server error {e.response.status_code} on attempt {attempt + 1}")
-                    time.sleep(2 ** attempt)
-                else:  # Client errors - don't retry
-                    raise WCLCScraperError(f"HTTP error {e.response.status_code}: {e}")
-
-            except Exception as e:
-                last_exception = e
-                logger.warning(f"Unexpected error on attempt {attempt + 1}: {e}")
-                time.sleep(2 ** attempt)
-
-        # All attempts failed
-        raise WCLCScraperError(f"Failed to fetch HTML after {self.max_retries} attempts. Last error: {last_exception}")
-
-    def _validate_html_content(self, html: str) -> bool:
-        """
-        Validate that HTML contains expected lottery content
-
-        Args:
-            html (str): HTML content to validate
-
-        Returns:
-            bool: True if content appears valid
-        """
-        # Check for common lottery-related terms from centralized configuration
-        html_lower = html.lower()
-        found_indicators = sum(1 for indicator in AppConfig.LOTTERY_INDICATORS if indicator in html_lower)
-
-        # Require at least 3 lottery indicators
-        return found_indicators >= 3 and len(html) > 1000
 
     def extract_month_links(self, html: str, base_url: str) -> List[str]:
         """
@@ -1011,66 +883,46 @@ class WCLCScraper:
         else:
             raise WCLCScraperError(f"Unknown game type: {game_type}")
 
-    def scrape_batch_history(self, base_url: str, game_type: str, max_months: Optional[int] = None) -> List[Dict]:
+    def scrape_batch_history(self, html_dir: str, game_type: str) -> List[Dict]:
         """
-        Scrape historical data by following month navigation links
+        Process multiple HTML files from a directory
 
         Args:
-            base_url (str): Base URL for the lottery results
+            html_dir (str): Directory containing HTML files to process
             game_type (str): Game type (649, max, western649)
-            max_months (int): Maximum number of months to scrape (None for all)
 
         Returns:
             list: Combined list of all draws with duplicates removed
         """
         all_draws = []
-        self.processed_urls.clear()
         self.duplicate_draws.clear()
 
-        logger.info(f"Starting batch scrape for {game_type.upper()}")
+        logger.info(f"Starting batch processing for {game_type.upper()} from {html_dir}")
 
         try:
-            # 1. Download and parse current month page
-            logger.info("Scraping current month page...")
-            current_html = self.fetch_html_with_retry(base_url)
-
-            # Parse current page draws
-            current_draws = self._parse_draws_by_game(current_html, game_type)
-            all_draws.extend(current_draws)
-            self.processed_urls.add(base_url)
-
-            logger.info(f"Current page: {len(current_draws)} draws found")
-
-            # 2. Extract month links from current page
-            month_links = self.extract_month_links(current_html, base_url)
-
-            if not month_links:
-                logger.warning("No historical month links found. Only current page data available.")
+            # List all HTML files in directory
+            html_files = [f for f in os.listdir(html_dir) if f.endswith('.html')]
+            if not html_files:
+                logger.warning(f"No HTML files found in {html_dir}")
                 return all_draws
 
-            # 3. Limit months if specified
-            if max_months and len(month_links) > max_months:
-                month_links = month_links[:max_months]
-                logger.info(f"Limited to {max_months} months as requested")
+            logger.info(f"Found {len(html_files)} HTML files to process")
 
-            # 4. Scrape each month page
-            for i, month_url in enumerate(month_links, 1):
-                if month_url in self.processed_urls:
-                    logger.debug(f"Skipping already processed URL: {month_url}")
-                    continue
-
+            # Process each HTML file
+            for i, html_file in enumerate(html_files, 1):
                 try:
-                    logger.info(f"Scraping month {i}/{len(month_links)}: {month_url}")
+                    file_path = os.path.join(html_dir, html_file)
+                    logger.info(f"Processing file {i}/{len(html_files)}: {html_file}")
 
-                    # Add small delay to be respectful to the server
-                    time.sleep(1)
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        html_content = f.read()
 
-                    month_html = self.fetch_html_with_retry(month_url)
-                    month_draws = self._parse_draws_by_game(month_html, game_type)
+                    # Parse the file
+                    draws = self._parse_draws_by_game(html_content, game_type)
 
                     # Filter out duplicates
                     new_draws = []
-                    for draw in month_draws:
+                    for draw in draws:
                         fingerprint = self.create_draw_fingerprint(draw)
                         if fingerprint not in self.duplicate_draws:
                             new_draws.append(draw)
@@ -1079,25 +931,35 @@ class WCLCScraper:
                             logger.debug(f"Duplicate draw filtered: {draw.get('date', 'Unknown date')}")
 
                     all_draws.extend(new_draws)
-                    self.processed_urls.add(month_url)
-
-                    logger.info(f"Month {i}: {len(new_draws)} new draws added ({len(month_draws)} total found)")
+                    logger.info(f"File {i}: {len(new_draws)} new draws added ({len(draws)} total found)")
 
                 except Exception as e:
-                    logger.error(f"Error scraping month {i} ({month_url}): {e}")
+                    logger.error(f"Error processing file {html_file}: {e}")
                     continue
 
-            # 5. Final deduplication across all draws
+            # Final deduplication
             final_draws = self._deduplicate_draws(all_draws)
 
-            logger.info(f"Batch scrape completed: {len(final_draws)} unique draws total")
-            logger.info(f"Processed {len(self.processed_urls)} pages")
+            logger.info(f"Batch processing completed: {len(final_draws)} unique draws total")
+            logger.info(f"Processed {len(html_files)} files")
 
             return final_draws
 
         except Exception as e:
-            logger.error(f"Batch scraping failed: {e}")
-            raise WCLCScraperError(f"Batch scraping error: {e}")
+            logger.error(f"Batch processing failed: {e}")
+            raise WCLCScraperError(f"Batch processing error: {e}")
+
+    def _validate_html_content(self, html: str) -> bool:
+        """
+        Basic validation of HTML content
+
+        Args:
+            html (str): HTML content to validate
+
+        Returns:
+            bool: True if content appears valid
+        """
+        return len(html) > 1000 and ('<div' in html or '<table' in html)
 
     def save_to_csv(self, data: List[Dict], output_file: str) -> None:
         """Save validated data to CSV file"""
@@ -1186,93 +1048,54 @@ class WCLCScraper:
 
 
 def run_scraper():
-    """Main CLI entry point with batch processing support"""
+    """Main CLI entry point for processing HTML files"""
     parser = argparse.ArgumentParser(
-        description="WCLC Lottery Scraper - Extract Western Canada lottery draw data with batch history",
+        description="WCLC Lottery Data Extractor - Process lottery draw data from HTML files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Scrape current month only
-  python wclc_scraper.py --game 649 --output results.csv
+  # Process a single HTML file
+  python wclc_scraper.py --file data/649_draws.html --game 649 --output results.csv
 
-  # Scrape all available history
-  python wclc_scraper.py --game 649 --batch --output complete_649_history.csv
+  # Process batch of HTML files
+  python wclc_scraper.py --dir data/html_files --game max --output complete_history.csv
 
-  # Scrape last 6 months
-  python wclc_scraper.py --game max --batch --max-months 6 --format both
-
-  # Use custom URL
-  python wclc_scraper.py --url https://www.wclc.com/winning-numbers/lotto-649-extra.htm --game 649 --batch
-
-  # Run with different game types
-  python wclc_scraper.py --game western649 --output western649_results.csv
-  python wclc_scraper.py --game westernmax --output westernmax_results.csv
-  python wclc_scraper.py --game dailygrand --output dailygrand_results.csv
+  # Process files with different game types
+  python wclc_scraper.py --dir data/western649 --game western649 --output western649_results.csv
+  python wclc_scraper.py --dir data/westernmax --game westernmax --output westernmax_results.csv
         """
     )
 
     # Input source (mutually exclusive)
-    input_group = parser.add_mutually_exclusive_group()
-    input_group.add_argument('--url', type=str, help='WCLC lottery results page URL')
-    input_group.add_argument('--file', type=str, help='Path to saved HTML file')
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument('--file', type=str, help='Path to a single HTML file')
+    input_group.add_argument('--dir', type=str, help='Directory containing multiple HTML files')
 
     # Game configuration
     parser.add_argument('--game', type=str, choices=AppConfig.get_supported_games(), 
                        required=True, help='Lottery game type')
-
-    # Batch processing options
-    parser.add_argument('--batch', action='store_true',
-                       help='Enable batch scraping of historical data')
-    parser.add_argument('--max-months', type=int,
-                       help='Maximum number of months to scrape (default: all available)')
 
     # Output configuration
     parser.add_argument('--output', type=str, help='Output file path (default: auto-generated)')
     parser.add_argument('--format', type=str, choices=['csv', 'sqlite', 'both'], 
                        default='csv', help='Output format (default: csv)')
 
-    # Advanced options
-    parser.add_argument('--save-html', action='store_true', 
-                       help='Save downloaded HTML for debugging')
-    parser.add_argument('--retries', type=int, default=AppConfig.SCRAPER_RETRIES,
-                       help=f'Maximum retry attempts (default: {AppConfig.SCRAPER_RETRIES})')
-    parser.add_argument('--timeout', type=int, default=AppConfig.SCRAPER_TIMEOUT,
-                       help=f'Request timeout in seconds (default: {AppConfig.SCRAPER_TIMEOUT})')
-
     args = parser.parse_args()
 
-    # Initialize scraper with configuration
-    scraper = WCLCScraper(max_retries=args.retries, timeout=args.timeout)
+    # Initialize scraper
+    scraper = WCLCScraper()
 
     try:
-        # Determine URL source
-        if args.url:
-            base_url = args.url
-        elif args.file:
-            # File mode - no batch processing
-            if args.batch:
-                logger.warning("Batch mode not supported with --file option. Using single file only.")
+        # Process data based on input mode
+        if args.file:
+            # Single file mode
             html = scraper.read_html(args.file)
             data = scraper._parse_draws_by_game(html, args.game)
+            logger.info(f"Processed single file: {args.file}")
         else:
-            # Use default WCLC URL for the game from centralized configuration
-            try:
-                base_url = WCLCScraper.get_game_url(args.game)
-                logger.info(f"Using default WCLC URL for {args.game}: {base_url}")
-            except WCLCScraperError as e:
-                raise WCLCScraperError(f"No URL provided and no default URL available: {e}")
-
-        # Process data based on mode
-        if not args.file:  # URL-based processing
-            if args.batch:
-                # Batch mode - scrape all available history
-                logger.info("🕐 Starting batch historical scraping...")
-                data = scraper.scrape_batch_history(base_url, args.game, args.max_months)
-            else:
-                # Single page mode
-                save_file = f"{args.game}_latest.html" if args.save_html else None
-                html = scraper.fetch_html_with_retry(base_url, save_file)
-                data = scraper._parse_draws_by_game(html, args.game)
+            # Batch directory mode
+            data = scraper.scrape_batch_history(args.dir, args.game)
+            logger.info(f"Processed directory: {args.dir}")
 
         if not data:
             raise WCLCScraperError("No valid draw data extracted. Check HTML structure or selectors.")
@@ -1280,7 +1103,7 @@ Examples:
         # Generate output filename if not provided
         if not args.output:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            batch_suffix = "_batch" if args.batch else ""
+            batch_suffix = "_batch" if args.dir else ""
             if args.format == 'csv':
                 args.output = f"wclc_{args.game}_results{batch_suffix}_{timestamp}.csv"
             elif args.format == 'sqlite':
@@ -1298,12 +1121,9 @@ Examples:
             scraper.save_to_sqlite(data, f"{args.output}.db")
 
         # Success summary
-        mode_desc = "batch historical" if args.batch else "current page"
+        mode_desc = "batch directory" if args.dir else "single file"
         print(f"\n🎯 Success! Extracted {len(data)} draws for {args.game.upper()} ({mode_desc})")
         print(f"📁 Output saved to: {args.output}")
-
-        if args.batch:
-            print(f"🏆 Complete historical dataset ready for analysis!")
 
         if args.format in ['sqlite', 'both']:
             print("💡 Tip: Use SQLite browser or pandas.read_sql() to analyze the database")
@@ -1319,10 +1139,9 @@ Examples:
         logger.error(f"Unexpected error: {e}")
         print(f"\n💥 Unexpected Error: {e}")
         print("\n🔧 Troubleshooting:")
-        print("1. Check your internet connection (if using --url)")
-        print("2. Verify the HTML file exists (if using --file)")
-        print("3. Try using --save-html to debug HTML content")
-        print("4. Check if the WCLC website structure has changed")
+        print("1. Verify the HTML file exists")
+        print("2. Check if the HTML contains valid lottery data")
+        print("3. Check if the HTML structure matches expected selectors")
         return 1
 
 
