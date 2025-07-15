@@ -29,6 +29,9 @@ logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
 # Import embedded chart widgets
 from gui.chart_widgets import EmbeddedChartWidget
 
+# Import our new widget
+from gui.scraper_widget import WCLCDataEntryWidget
+
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -312,6 +315,9 @@ class SaskatoonLottoPredictor(QMainWindow):
 
         # Scraping tab
         self.create_scraping_tab()
+
+        # Add new WCLC data entry tab
+        self.init_data_entry_tab()
 
         parent_layout.addWidget(self.tab_widget)
 
@@ -1803,6 +1809,18 @@ class SaskatoonLottoPredictor(QMainWindow):
         except Exception as e:
             logger.error(f"Failed to update performance display: {e}")
             self.performance_label.setText("📈 Performance: Unable to load")
+
+    def init_data_entry_tab(self):
+        """Initialize the WCLC data entry tab"""
+        data_entry_tab = QWidget()
+        layout = QVBoxLayout(data_entry_tab)
+
+        # Create and add the WCLC data entry widget
+        self.wclc_entry_widget = WCLCDataEntryWidget()
+        layout.addWidget(self.wclc_entry_widget)
+
+        # Add tab to main tab widget
+        self.tab_widget.addTab(data_entry_tab, "Data Entry")
 
 
 def main():
