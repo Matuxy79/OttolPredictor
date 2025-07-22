@@ -15,7 +15,7 @@ from matplotlib.figure import Figure
 from typing import List, Dict, Tuple, Optional
 import logging
 
-from data_manager import get_data_manager
+from core.data_manager import get_data_manager
 
 logger = logging.getLogger(__name__)
 
