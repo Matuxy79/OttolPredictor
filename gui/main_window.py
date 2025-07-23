@@ -1676,7 +1676,13 @@ class SaskatoonLottoPredictor(QMainWindow):
     def copy_numbers_to_clipboard(self):
         """Copy current prediction numbers to clipboard"""
         if self.current_prediction:
-            numbers = self.current_prediction['numbers']
+            # Support both 'numbers' and 'predicted_numbers' keys
+            numbers = self.current_prediction.get('numbers')
+            if numbers is None:
+                numbers = self.current_prediction.get('predicted_numbers')
+            if numbers is None:
+                self.strategy_info.setText("❌ Error: No numbers found in prediction.")
+                return
             numbers_text = " - ".join(map(str, numbers))
 
             from PyQt5.QtWidgets import QApplication
@@ -1697,14 +1703,19 @@ class SaskatoonLottoPredictor(QMainWindow):
             self, 
             "Save Prediction", 
             "Add notes (optional):",
-            text=f"Smart pick for {self.current_prediction['game'].upper()}"
+            text=f"Smart pick for {self.current_prediction.get('game', self.get_current_game_code()).upper()}"
         )
 
         if ok:
             # Get prediction details
             game = self.current_prediction.get('game', self.get_current_game_code())
             strategy = self.current_prediction.get('strategy', 'unknown')
-            numbers = self.current_prediction.get('predicted_numbers', [])
+            numbers = self.current_prediction.get('numbers')
+            if numbers is None:
+                numbers = self.current_prediction.get('predicted_numbers', [])
+            if numbers is None:
+                self.strategy_info.setText("❌ Error: No numbers found in prediction.")
+                return
 
             # Log with new method signature
             timestamp = self.prediction_logger.log_prediction(strategy, game, numbers)

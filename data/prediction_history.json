@@ -1,0 +1,19 @@
+[
+  {
+    "strategy": "unknown",
+    "game": "649",
+    "predicted_numbers": [
+      5,
+      15,
+      24,
+      28,
+      30,
+      44
+    ],
+    "timestamp": "2025-07-23T01:17:17.679419",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  }
+]
