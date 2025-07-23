@@ -3,7 +3,7 @@ Unified Data Manager for Lottery Data
 
 IMPLEMENTATION STRATEGY:
 1. Maintain existing interface that GUI expects
-2. Internally coordinate PDF + live scraping
+2. Internally coordinate PDF data only (live scraping removed)
 3. Handle caching to avoid re-parsing PDFs
 4. Detect and resolve data conflicts
 """
@@ -18,12 +18,11 @@ import json
 
 # Import components
 from data_sources.pdf_parser import WCLCPDFParser
-from wclc_scraper import WCLCScraper
 from core.data_validator import DataValidator
 
 class LotteryDataManager:
     """
-    Unified data manager that combines PDF archives with live scraping
+    Unified data manager that combines PDF archives (live scraping removed)
 
     This class maintains the same interface that the GUI expects while
     internally coordinating data from multiple sources.
@@ -37,7 +36,6 @@ class LotteryDataManager:
 
         # Initialize data sources
         self.pdf_parser = WCLCPDFParser(data_dir)
-        self.live_scraper = WCLCScraper()
 
         # Create cache directory
         os.makedirs(self.processed_dir, exist_ok=True)
@@ -62,16 +60,8 @@ class LotteryDataManager:
         pdf_data = self._load_pdf_data(game)
         csv_data = self._load_csv_data(game) 
 
-        # Check if we need to scrape recent data
-        need_scraping = self._check_if_scraping_needed(game, pdf_data, csv_data)
-
-        # Scrape recent data if needed
-        recent_data = pd.DataFrame()
-        if need_scraping or full_refresh:
-            recent_data = self._scrape_recent_data(game)
-
-        # Combine sources
-        combined_data = self._combine_data_sources(game, pdf_data, csv_data, recent_data)
+        # Combine sources (no live scraping)
+        combined_data = self._combine_data_sources(game, pdf_data, csv_data, pd.DataFrame())
 
         # CRITICAL: Add numbers_list normalization to fix analytics
         if not combined_data.empty:
@@ -203,91 +193,14 @@ class LotteryDataManager:
             self.logger.error(f"Error loading CSV data for {game}: {e}")
             return pd.DataFrame()
 
-    def _check_if_scraping_needed(self, game: str, pdf_data: pd.DataFrame, csv_data: pd.DataFrame) -> bool:
-        """Check if we need to scrape recent data"""
-        # Always scrape if we have no data
-        if pdf_data.empty and csv_data.empty:
-            return True
-
-        # Get the latest date from our data
-        latest_date = None
-
-        # Check PDF data
-        if not pdf_data.empty and 'date' in pdf_data.columns:
-            pdf_dates = pd.to_datetime(pdf_data['date'], errors='coerce')
-            pdf_latest = pdf_dates.max()
-            if pd.notna(pdf_latest):
-                latest_date = pdf_latest
-
-        # Check CSV data
-        if not csv_data.empty and 'date' in csv_data.columns:
-            csv_dates = pd.to_datetime(csv_data['date'], errors='coerce')
-            csv_latest = csv_dates.max()
-            if pd.notna(csv_latest) and (latest_date is None or csv_latest > latest_date):
-                latest_date = csv_latest
-
-        # If we have no valid dates, we need to scrape
-        if latest_date is None:
-            return True
-
-        # Check if the latest date is recent enough
-        today = pd.Timestamp(datetime.now().date())
-        days_since_latest = (today - latest_date).days
-
-        # For 649, draws are twice a week (Wed/Sat)
-        if game == '649':
-            return days_since_latest > 4  # More than 4 days old
-
-        # For Max, draws are twice a week (Tue/Fri)
-        elif game == 'max':
-            return days_since_latest > 4  # More than 4 days old
-
-        # For other games, use a default threshold
-        else:
-            return days_since_latest > 7  # More than a week old
 
     def _scrape_recent_data(self, game: str) -> pd.DataFrame:
-        """Scrape recent data from the website"""
-        try:
-            self.logger.info(f"Scraping recent data for {game}")
-
-            # Get URL for the game
-            url = self.live_scraper.get_game_url(game)
-
-            # Scrape only the current page (recent data)
-            html = self.live_scraper.fetch_html_with_retry(url)
-
-            # Parse the data based on game type
-            data = self.live_scraper._parse_draws_by_game(html, game)
-
-            if not data:
-                self.logger.warning(f"No data scraped for {game}")
-                return pd.DataFrame()
-
-            # CRITICAL FIX: Ensure numbers are always Python lists before creating DataFrame
-            for draw in data:
-                if 'numbers' in draw:
-                    numbers = draw['numbers']
-                    import numpy as np
-                    if isinstance(numbers, np.ndarray):
-                        draw['numbers'] = numbers.tolist()
-                    elif not isinstance(numbers, list):
-                        draw['numbers'] = list(numbers) if numbers else []
-
-            # Convert to DataFrame
-            df = pd.DataFrame(data)
-
-            self.logger.info(f"Scraped {len(df)} recent records for {game}")
-            return df
-
-        except Exception as e:
-            self.logger.error(f"Error scraping recent data for {game}: {e}")
-            return pd.DataFrame()
+        """Legacy: always returns empty DataFrame (scraping removed)"""
+        return pd.DataFrame()
 
     def _combine_data_sources(self, game: str, pdf_data: pd.DataFrame, 
-                             csv_data: pd.DataFrame, scraped_data: pd.DataFrame) -> pd.DataFrame:
-        """Combine data from all sources, resolving conflicts"""
-        # Start with empty DataFrame
+                             csv_data: pd.DataFrame, _: pd.DataFrame) -> pd.DataFrame:
+        """Combine data from PDF and CSV only, resolving conflicts"""
         combined = pd.DataFrame()
 
         # Add PDF data (most authoritative for historical data)
@@ -299,36 +212,12 @@ class LotteryDataManager:
             if combined.empty:
                 combined = csv_data.copy()
             else:
-                # Get dates from combined data
                 if 'date' in combined.columns:
                     combined_dates = set(combined['date'])
-
-                    # Filter CSV data to only include dates not in combined
                     if 'date' in csv_data.columns:
                         new_csv_data = csv_data[~csv_data['date'].isin(combined_dates)]
-
-                        # Append new data
                         if not new_csv_data.empty:
                             combined = pd.concat([combined, new_csv_data], ignore_index=True)
-
-        # Add scraped data (most recent)
-        if not scraped_data.empty:
-            if combined.empty:
-                combined = scraped_data.copy()
-            else:
-                # Get dates from combined data
-                if 'date' in combined.columns and 'date' in scraped_data.columns:
-                    combined_dates = set(combined['date'])
-
-                    # For dates in both, prefer scraped data for recent dates
-                    overlap_dates = set(scraped_data['date']).intersection(combined_dates)
-
-                    if overlap_dates:
-                        # Remove overlapping dates from combined
-                        combined = combined[~combined['date'].isin(overlap_dates)]
-
-                    # Append scraped data
-                    combined = pd.concat([combined, scraped_data], ignore_index=True)
 
         # Sort by date (newest first)
         if not combined.empty and 'date' in combined.columns:
@@ -395,60 +284,14 @@ class LotteryDataManager:
             return None
 
     def refresh_recent_data_only(self, game: str) -> pd.DataFrame:
-        """Scrape only the most recent draws (for GUI refresh button)"""
+        """Refresh recent data (reload PDF/CSV only)"""
         try:
             self.logger.info(f"Refreshing recent data for {game}")
-
-            # Scrape recent data
-            scraped_data = self._scrape_recent_data(game)
-
-            if scraped_data.empty:
-                self.logger.warning(f"No recent data found for {game}")
-                return pd.DataFrame()
-
-            # Load existing data
+            data = self.load_game_data(game, full_refresh=True)
             cache_key = f"{game}_data"
-            existing_data = self._cache.get(cache_key, pd.DataFrame())
-
-            if existing_data.empty:
-                # No existing data, just return scraped data
-                self._cache[cache_key] = scraped_data
-                self._last_refresh[cache_key] = datetime.now()
-                return scraped_data
-
-            # Combine with existing data
-            if 'date' in existing_data.columns and 'date' in scraped_data.columns:
-                # Get dates from existing data
-                existing_dates = set(existing_data['date'])
-
-                # For dates in both, prefer scraped data
-                overlap_dates = set(scraped_data['date']).intersection(existing_dates)
-
-                if overlap_dates:
-                    # Remove overlapping dates from existing data
-                    existing_data = existing_data[~existing_data['date'].isin(overlap_dates)]
-
-                # Combine data
-                combined = pd.concat([existing_data, scraped_data], ignore_index=True)
-
-                # Sort by date
-                try:
-                    combined['date_temp'] = pd.to_datetime(combined['date'], errors='coerce')
-                    combined = combined.sort_values('date_temp', ascending=False)
-                    combined = combined.drop('date_temp', axis=1)
-                except Exception as e:
-                    self.logger.warning(f"Error sorting by date: {e}")
-
-                # Update cache
-                self._cache[cache_key] = combined
-                self._last_refresh[cache_key] = datetime.now()
-
-                return combined
-
-            else:
-                # Can't merge properly, just return scraped data
-                return scraped_data
-
+            self._cache[cache_key] = data
+            self._last_refresh[cache_key] = datetime.now()
+            return data
         except Exception as e:
             self.logger.error(f"Error refreshing recent data: {e}")
             return pd.DataFrame()
@@ -600,7 +443,7 @@ class LotteryDataManager:
             }
 
     def refresh_all_data(self) -> None:
-        """Refresh all data from files and scraping"""
+        """Refresh all data from files only (scraping removed)"""
         try:
             self.logger.info("Refreshing all data")
 
