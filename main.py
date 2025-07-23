@@ -36,6 +36,7 @@ from logging_config import setup_logging, get_logger
 logging.basicConfig(
     level=logging.DEBUG,  # TEMP: Switch back to INFO later
     format='%(asctime)s [%(levelname)s] %(message)s',
+    encoding='utf-8'  # Fix UnicodeEncodeError for emojis in logs
 )
 
 # Use the existing logging setup with DEBUG level
