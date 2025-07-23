@@ -189,6 +189,31 @@ class WCLCDataEntryWidget(QWidget):
             df.sort_values('date', ascending=False, inplace=True)
             df.to_csv(file_path, index=False)
 
+            # --- NEW: Trigger prediction evaluation and analytics refresh ---
+            try:
+                from tracking.prediction_logger import PredictionLogger
+                from core.data_manager import get_data_manager
+                # Re-evaluate predictions
+                prediction_logger = PredictionLogger()
+                data_manager = get_data_manager()
+                prediction_logger.evaluate_predictions(data_manager)
+                # Optionally, show closest prediction for this draw
+                recent_preds = prediction_logger.get_recent_predictions(game=game, days=7)
+                closest = None
+                best_match = -1
+                for pred in recent_preds:
+                    if pred.get('evaluated') and pred.get('match_count', 0) > best_match and pred.get('timestamp')[:10] <= draw_data['date']:
+                        best_match = pred['match_count']
+                        closest = pred
+                if closest:
+                    QMessageBox.information(self, "Closest Prediction",
+                        f"Closest prediction for {draw_data['date']} ({game}):\n"
+                        f"Numbers: {closest['predicted_numbers']}\n"
+                        f"Matches: {closest['match_count']}\n"
+                        f"Win: {'Yes' if closest['did_win'] else 'No'}")
+            except Exception as eval_err:
+                logger.error(f"Error evaluating predictions after draw entry: {eval_err}")
+
             QMessageBox.information(self, "Success",
                                  f"Added draw for {draw_date} to {game} data")
             self.clear_form()
