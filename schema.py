@@ -121,7 +121,24 @@ class DataValidator:
             game_code: Game code to use for validation rules
             
         Returns:
+
             List of error messages, empty if valid
+        if not date_parsed:
+            date_str = data.get('date', None)
+            if date_str:
+                try:
+                    date_parsed = pd.to_datetime(date_str, errors='coerce')
+                    if pd.isna(date_parsed):
+                        date_parsed = None
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Failed to parse date '{date_str}': {e}")
+                    date_parsed = None
+
+        # If still missing, log a warning
+        if not date_parsed:
+            import logging
+            logging.getLogger(__name__).warning(f"DrawRecord missing valid date_parsed for data: {data}")
         """
         errors = []
         

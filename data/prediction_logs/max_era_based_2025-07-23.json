@@ -4,14 +4,14 @@
     "game": "max",
     "predicted_numbers": [
       12,
-      22,
+      26,
+      28,
+      29,
+      36,
       37,
-      42,
-      44,
-      45,
-      47
+      49
     ],
-    "timestamp": "2025-07-23T02:01:04.251104",
+    "timestamp": "2025-07-23T02:05:50.817939",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -21,105 +21,15 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      9,
-      13,
-      17,
-      30,
-      39,
-      41,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.251104",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      12,
-      15,
-      26,
-      31,
-      38,
-      41,
-      42
-    ],
-    "timestamp": "2025-07-23T02:01:04.252340",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      4,
       5,
       10,
-      11,
-      23,
-      42
-    ],
-    "timestamp": "2025-07-23T02:01:04.253184",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      9,
-      11,
-      20,
       32,
-      44,
-      45,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.253184",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      12,
-      14,
-      21,
-      31,
-      35,
-      38,
-      42
-    ],
-    "timestamp": "2025-07-23T02:01:04.253184",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      11,
-      21,
-      22,
-      31,
+      33,
       34,
-      46
+      37,
+      41
     ],
-    "timestamp": "2025-07-23T02:01:04.253184",
+    "timestamp": "2025-07-23T02:05:50.916714",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -129,51 +39,15 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      2,
+      5,
       15,
-      21,
-      32,
-      34,
-      41,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.253184",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      15,
-      16,
+      18,
       19,
-      34,
-      47,
-      48
+      25,
+      33,
+      45
     ],
-    "timestamp": "2025-07-23T02:01:04.253184",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      12,
-      15,
-      23,
-      44,
-      47,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.253184",
+    "timestamp": "2025-07-23T02:05:51.021873",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -184,14 +58,14 @@
     "game": "max",
     "predicted_numbers": [
       10,
-      14,
-      26,
-      27,
-      32,
-      35,
-      42
+      11,
+      17,
+      29,
+      40,
+      43,
+      50
     ],
-    "timestamp": "2025-07-23T02:01:04.253184",
+    "timestamp": "2025-07-23T02:05:51.141825",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -201,15 +75,249 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      5,
+      6,
+      13,
       14,
-      25,
-      35,
+      15,
+      17,
+      20,
+      43
+    ],
+    "timestamp": "2025-07-23T02:05:51.288221",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      11,
+      18,
+      24,
+      26,
+      30,
+      47,
+      48
+    ],
+    "timestamp": "2025-07-23T02:05:51.452339",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      27,
+      36,
       40,
+      44,
+      47,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:51.571961",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      3,
+      5,
+      19,
+      38,
+      45,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:51.690008",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      9,
+      10,
+      13,
+      28,
+      38,
       43,
       46
     ],
-    "timestamp": "2025-07-23T02:01:04.253184",
+    "timestamp": "2025-07-23T02:05:51.797130",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      9,
+      14,
+      16,
+      20,
+      26,
+      30,
+      36
+    ],
+    "timestamp": "2025-07-23T02:05:51.980958",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      4,
+      13,
+      26,
+      32,
+      38,
+      45,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:52.209315",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      9,
+      11,
+      24,
+      34,
+      37,
+      47,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:52.424729",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      9,
+      12,
+      16,
+      19,
+      26,
+      31,
+      38
+    ],
+    "timestamp": "2025-07-23T02:05:52.561971",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      12,
+      15,
+      21,
+      23,
+      42,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:52.678746",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      5,
+      8,
+      10,
+      26,
+      35,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:52.791633",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      7,
+      13,
+      14,
+      19,
+      28,
+      38
+    ],
+    "timestamp": "2025-07-23T02:05:52.886438",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      5,
+      7,
+      14,
+      22,
+      23,
+      25
+    ],
+    "timestamp": "2025-07-23T02:05:52.988566",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      7,
+      11,
+      15,
+      20,
+      22,
+      23
+    ],
+    "timestamp": "2025-07-23T02:05:53.091243",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -220,32 +328,86 @@
     "game": "max",
     "predicted_numbers": [
       5,
-      13,
-      14,
-      30,
-      36,
+      7,
+      16,
+      27,
+      33,
+      48,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:53.231931",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      5,
+      20,
+      21,
+      35,
+      41,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:53.384273",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      5,
+      6,
+      16,
+      25,
       37,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:53.551095",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      11,
+      18,
+      21,
+      32,
+      34,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:53.673467",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      13,
+      15,
+      21,
+      25,
+      36,
+      38,
       39
     ],
-    "timestamp": "2025-07-23T02:01:04.253184",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      6,
-      12,
-      26,
-      30,
-      32,
-      41,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.253184",
+    "timestamp": "2025-07-23T02:05:53.782033",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -256,500 +418,14 @@
     "game": "max",
     "predicted_numbers": [
       1,
-      5,
-      6,
-      17,
-      30,
-      33,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.253184",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      7,
-      14,
-      21,
-      34,
-      38,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.253184",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      14,
-      21,
-      22,
-      36,
-      42,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.253184",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      7,
-      25,
-      33,
-      37,
-      43,
-      44,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.257904",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      18,
-      30,
-      37,
-      39,
-      40,
-      41,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.257904",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      6,
-      7,
-      20,
-      22,
-      36,
-      43,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.257904",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      7,
-      10,
-      12,
-      19,
-      27,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.258917",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      10,
-      16,
-      27,
-      38,
-      42,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.259918",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      5,
-      13,
-      24,
-      33,
-      37,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.259918",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      4,
-      17,
-      24,
-      35,
-      37,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.261934",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      14,
-      19,
-      38,
-      41,
-      46,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.261934",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      5,
       9,
-      10,
-      12,
-      32,
-      42,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.262930",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      21,
-      36,
-      37,
-      40,
-      45,
-      46,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.262930",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      8,
-      18,
-      29,
-      30,
-      35,
-      38
-    ],
-    "timestamp": "2025-07-23T02:01:04.263934",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      10,
-      13,
-      24,
-      25,
-      32,
-      36
-    ],
-    "timestamp": "2025-07-23T02:01:04.263934",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      7,
-      8,
-      12,
-      22,
-      23,
-      25,
-      42
-    ],
-    "timestamp": "2025-07-23T02:01:04.263934",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      10,
-      15,
-      16,
-      21,
-      31,
-      40
-    ],
-    "timestamp": "2025-07-23T02:01:04.264930",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      7,
-      13,
-      20,
-      21,
-      26,
-      31,
-      38
-    ],
-    "timestamp": "2025-07-23T02:01:04.266930",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      2,
-      14,
       19,
-      20,
-      34,
-      36
-    ],
-    "timestamp": "2025-07-23T02:01:04.267929",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      10,
-      29,
-      37,
-      38,
-      44,
-      46,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.267929",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      11,
-      12,
-      23,
-      41,
-      42,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.270930",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      25,
-      26,
-      34,
-      40,
-      41,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.271944",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      11,
       22,
-      25,
       30,
-      32,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.271944",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      11,
-      14,
-      26,
-      30,
-      34,
-      38
-    ],
-    "timestamp": "2025-07-23T02:01:04.272944",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      3,
-      4,
-      13,
-      17,
-      32,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.274192",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      31,
-      32,
-      33,
-      36,
-      39,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.275206",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      10,
-      12,
-      24,
-      25,
-      31,
-      36,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.275206",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      10,
-      15,
-      18,
-      24,
-      27,
       36,
       43
     ],
-    "timestamp": "2025-07-23T02:01:04.275206",
+    "timestamp": "2025-07-23T02:05:53.885665",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -759,15 +435,15 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      4,
       8,
-      27,
-      30,
-      34,
-      39,
+      14,
+      18,
+      19,
+      29,
+      43,
       48
     ],
-    "timestamp": "2025-07-23T02:01:04.275206",
+    "timestamp": "2025-07-23T02:05:53.989334",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -777,141 +453,15 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      5,
-      8,
-      15,
-      20,
-      21,
-      31,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.276206",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      8,
-      30,
-      31,
-      38,
-      44,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.276206",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      12,
-      17,
-      24,
-      34,
-      48,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.277207",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
+      3,
       7,
       10,
-      22,
-      24,
-      30,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.278207",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      8,
-      12,
+      11,
       17,
-      24,
-      29,
-      34
-    ],
-    "timestamp": "2025-07-23T02:01:04.279209",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      25,
-      30,
-      37,
-      40,
-      44,
+      47,
       49
     ],
-    "timestamp": "2025-07-23T02:01:04.280206",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      14,
-      22,
-      27,
-      29,
-      33,
-      41,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.280206",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      9,
-      10,
-      13,
-      17,
-      42,
-      43,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.281720",
+    "timestamp": "2025-07-23T02:05:54.110448",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -922,248 +472,14 @@
     "game": "max",
     "predicted_numbers": [
       6,
-      15,
-      18,
-      26,
-      39,
-      41,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.281720",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      11,
-      20,
-      25,
-      28,
-      34,
-      37,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.282739",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      9,
       14,
-      20,
-      24,
-      30,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.282739",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      10,
-      16,
-      20,
-      21,
-      30,
-      39,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.282739",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      16,
-      20,
-      27,
-      33,
-      38,
-      40,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.282739",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      12,
-      17,
-      22,
-      26,
-      31,
-      40
-    ],
-    "timestamp": "2025-07-23T02:01:04.282739",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      21,
-      28,
-      29,
-      30,
-      35,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.283737",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      15,
-      16,
       18,
-      19,
-      22,
-      23,
+      20,
+      21,
+      26,
       27
     ],
-    "timestamp": "2025-07-23T02:01:04.283737",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      9,
-      18,
-      30,
-      36,
-      39,
-      43,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.283737",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      10,
-      27,
-      30,
-      44,
-      45,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.283737",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      4,
-      8,
-      9,
-      14,
-      26,
-      41
-    ],
-    "timestamp": "2025-07-23T02:01:04.283737",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      8,
-      12,
-      13,
-      32,
-      35,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.284738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      26,
-      29,
-      32,
-      33,
-      43,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.284738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      7,
-      11,
-      13,
-      21,
-      23,
-      37,
-      40
-    ],
-    "timestamp": "2025-07-23T02:01:04.284738",
+    "timestamp": "2025-07-23T02:05:54.243933",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1174,194 +490,104 @@
     "game": "max",
     "predicted_numbers": [
       6,
-      9,
-      20,
-      22,
-      36,
-      37,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.285742",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      7,
-      8,
-      9,
-      19,
-      20,
-      23,
-      29
-    ],
-    "timestamp": "2025-07-23T02:01:04.285742",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      14,
       15,
-      17,
-      25,
+      20,
       28,
-      45,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.285742",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      11,
-      13,
-      26,
-      34,
-      35,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.285742",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      6,
-      8,
-      15,
-      39,
-      42,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.285742",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      15,
-      24,
-      26,
-      27,
-      29,
-      38,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.286738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      7,
-      13,
-      21,
-      31,
-      42,
-      43,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.286738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      3,
-      31,
-      33,
-      34,
-      39,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.286738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      6,
-      21,
-      29,
-      30,
-      41,
-      46,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.286738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      12,
-      22,
-      23,
-      25,
-      43,
-      44,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.286738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      20,
-      25,
-      29,
-      30,
       36,
-      40,
+      39,
       42
     ],
-    "timestamp": "2025-07-23T02:01:04.287740",
+    "timestamp": "2025-07-23T02:05:54.382000",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      20,
+      23,
+      33,
+      35,
+      36,
+      41,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:54.552019",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      10,
+      14,
+      26,
+      35,
+      36,
+      43,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:54.656778",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      4,
+      12,
+      13,
+      22,
+      26,
+      27
+    ],
+    "timestamp": "2025-07-23T02:05:54.768442",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      6,
+      24,
+      25,
+      34,
+      35,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:54.868586",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      19,
+      25,
+      27,
+      34,
+      35,
+      39,
+      43
+    ],
+    "timestamp": "2025-07-23T02:05:54.972903",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1372,32 +598,32 @@
     "game": "max",
     "predicted_numbers": [
       2,
-      4,
+      6,
+      8,
+      9,
+      13,
+      32,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:55.073868",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      18,
+      26,
+      29,
       31,
       33,
-      35,
-      43,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.287740",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      6,
-      10,
-      18,
-      35,
-      42,
       44
     ],
-    "timestamp": "2025-07-23T02:01:04.287740",
+    "timestamp": "2025-07-23T02:05:55.201949",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1407,87 +633,33 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      10,
-      17,
-      26,
-      27,
-      29,
-      39,
-      40
-    ],
-    "timestamp": "2025-07-23T02:01:04.287740",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      10,
-      15,
-      19,
-      22,
-      25,
-      38,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.288736",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      7,
-      17,
-      29,
-      41,
-      44,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.288736",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      11,
-      19,
-      24,
-      34,
-      38,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.288736",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      5,
       6,
+      9,
+      12,
       14,
-      19,
-      28,
+      30,
+      32,
+      39
+    ],
+    "timestamp": "2025-07-23T02:05:55.343812",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      12,
+      15,
+      17,
+      31,
       45,
       47
     ],
-    "timestamp": "2025-07-23T02:01:04.288736",
+    "timestamp": "2025-07-23T02:05:55.533829",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1497,51 +669,15 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      8,
-      16,
-      19,
-      21,
-      26,
-      42,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.289739",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
+      1,
       3,
-      13,
-      20,
-      21,
-      25,
-      39,
-      40
-    ],
-    "timestamp": "2025-07-23T02:01:04.289739",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
       4,
       11,
-      30,
-      31,
+      33,
       36,
-      37,
-      48
+      39
     ],
-    "timestamp": "2025-07-23T02:01:04.289739",
+    "timestamp": "2025-07-23T02:05:55.640835",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1551,33 +687,15 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      4,
-      10,
-      11,
-      14,
-      18,
-      38,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.289739",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      22,
-      24,
+      21,
+      23,
       31,
       32,
+      37,
       43,
       45
     ],
-    "timestamp": "2025-07-23T02:01:04.290743",
+    "timestamp": "2025-07-23T02:05:55.740930",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1587,33 +705,15 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      11,
       13,
-      26,
-      29,
-      35,
-      36,
-      44
+      17,
+      33,
+      34,
+      38,
+      49,
+      50
     ],
-    "timestamp": "2025-07-23T02:01:04.290743",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      6,
-      11,
-      12,
-      23,
-      42,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.290743",
+    "timestamp": "2025-07-23T02:05:55.855952",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1624,14 +724,14 @@
     "game": "max",
     "predicted_numbers": [
       9,
-      12,
-      16,
-      17,
-      28,
-      38,
-      44
+      14,
+      25,
+      40,
+      45,
+      46,
+      49
     ],
-    "timestamp": "2025-07-23T02:01:04.290743",
+    "timestamp": "2025-07-23T02:05:55.955947",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1641,15 +741,33 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
+      5,
       14,
-      19,
-      20,
-      26,
-      28,
-      34,
-      37
+      16,
+      36,
+      37,
+      39,
+      40
     ],
-    "timestamp": "2025-07-23T02:01:04.290743",
+    "timestamp": "2025-07-23T02:05:56.041191",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      12,
+      18,
+      27,
+      31,
+      43,
+      44,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:56.159978",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1660,68 +778,14 @@
     "game": "max",
     "predicted_numbers": [
       4,
-      13,
-      18,
+      9,
+      15,
       29,
-      34,
-      37,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.291738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      16,
-      20,
-      23,
-      24,
-      38,
-      41
-    ],
-    "timestamp": "2025-07-23T02:01:04.291738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      23,
-      29,
-      33,
-      38,
-      39,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.291738",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "era_based",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      11,
-      18,
-      29,
-      43,
       46,
-      47
+      49,
+      50
     ],
-    "timestamp": "2025-07-23T02:01:04.291738",
+    "timestamp": "2025-07-23T02:05:56.471172",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1732,14 +796,14 @@
     "game": "max",
     "predicted_numbers": [
       10,
-      15,
-      18,
-      21,
-      28,
+      11,
+      26,
+      36,
       39,
+      45,
       50
     ],
-    "timestamp": "2025-07-23T02:01:04.291738",
+    "timestamp": "2025-07-23T02:05:56.601621",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1749,15 +813,15 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
-      5,
-      6,
+      2,
       12,
-      21,
-      30,
-      40,
-      46
+      18,
+      20,
+      26,
+      43,
+      49
     ],
-    "timestamp": "2025-07-23T02:01:04.291738",
+    "timestamp": "2025-07-23T02:05:56.708396",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1767,15 +831,123 @@
     "strategy": "era_based",
     "game": "max",
     "predicted_numbers": [
+      1,
+      13,
+      22,
+      37,
+      38,
+      41,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:56.811832",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      2,
+      3,
+      12,
+      22,
+      25,
+      27
+    ],
+    "timestamp": "2025-07-23T02:05:56.905976",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      6,
+      13,
       16,
       17,
-      23,
-      25,
-      39,
-      44,
-      50
+      27,
+      31
     ],
-    "timestamp": "2025-07-23T02:01:04.292737",
+    "timestamp": "2025-07-23T02:05:57.011917",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      26,
+      31,
+      32,
+      34,
+      36,
+      38,
+      48
+    ],
+    "timestamp": "2025-07-23T02:05:57.115814",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      12,
+      16,
+      17,
+      22,
+      37,
+      42,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:57.248136",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      3,
+      12,
+      15,
+      37,
+      44,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:57.392947",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      28,
+      33,
+      42,
+      43,
+      46,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:57.544382",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1787,13 +959,841 @@
     "predicted_numbers": [
       19,
       21,
-      25,
-      30,
+      24,
+      35,
+      37,
+      42,
+      44
+    ],
+    "timestamp": "2025-07-23T02:05:57.651751",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      10,
+      18,
+      26,
+      28,
       45,
+      46,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:57.756946",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      9,
+      17,
+      19,
+      20,
+      26,
+      35,
+      39
+    ],
+    "timestamp": "2025-07-23T02:05:57.857272",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      4,
+      9,
+      21,
+      28,
+      32,
+      43
+    ],
+    "timestamp": "2025-07-23T02:05:57.955966",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      22,
+      31,
+      37,
+      41,
+      44,
+      45,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:58.060352",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      15,
+      28,
+      38,
+      41,
+      44,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:58.167809",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      8,
+      15,
+      30,
+      43,
+      44,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:58.310429",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      9,
+      10,
+      17,
+      18,
+      21,
+      23
+    ],
+    "timestamp": "2025-07-23T02:05:58.495875",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      24,
+      30,
+      31,
+      32,
+      35,
+      42,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:58.611747",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      13,
+      27,
+      29,
+      34,
+      39,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:58.710703",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      26,
+      27,
+      28,
+      29,
+      35,
+      37
+    ],
+    "timestamp": "2025-07-23T02:05:58.821825",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      8,
+      11,
+      15,
+      27,
+      29,
+      38
+    ],
+    "timestamp": "2025-07-23T02:05:58.926791",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      2,
+      5,
+      18,
+      31,
+      38,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:59.012900",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      4,
+      5,
+      10,
+      27,
+      33,
+      35
+    ],
+    "timestamp": "2025-07-23T02:05:59.124991",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      13,
+      25,
+      31,
+      38,
+      41,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:59.244082",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      7,
+      16,
+      19,
+      22,
+      29,
+      30
+    ],
+    "timestamp": "2025-07-23T02:05:59.371793",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      3,
+      6,
+      7,
+      16,
+      32,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:59.565701",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      8,
+      15,
+      16,
+      23,
+      30,
+      37,
+      44
+    ],
+    "timestamp": "2025-07-23T02:05:59.688525",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      8,
+      14,
+      24,
+      44,
+      45,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:59.796378",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      8,
+      18,
+      26,
+      37,
+      39,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:59.912121",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      3,
+      14,
+      18,
+      28,
+      31,
+      38
+    ],
+    "timestamp": "2025-07-23T02:06:00.018587",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      2,
+      4,
+      9,
+      26,
+      28,
+      30
+    ],
+    "timestamp": "2025-07-23T02:06:00.112088",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      14,
+      17,
+      24,
+      35,
+      44,
+      50
+    ],
+    "timestamp": "2025-07-23T02:06:00.246925",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      12,
+      16,
+      19,
+      27,
+      29,
+      48
+    ],
+    "timestamp": "2025-07-23T02:06:00.395938",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      14,
+      17,
+      27,
+      39,
+      40,
+      44
+    ],
+    "timestamp": "2025-07-23T02:06:00.561654",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      4,
+      5,
+      20,
+      22,
+      28,
+      33,
+      47
+    ],
+    "timestamp": "2025-07-23T02:06:00.688557",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      6,
+      13,
+      34,
+      37,
+      46,
+      49
+    ],
+    "timestamp": "2025-07-23T02:06:00.788610",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      12,
+      15,
+      19,
+      21,
+      22,
+      29,
+      48
+    ],
+    "timestamp": "2025-07-23T02:06:00.899790",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      14,
+      34,
+      36,
+      37,
+      42,
+      48
+    ],
+    "timestamp": "2025-07-23T02:06:01.002121",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      21,
+      24,
+      25,
+      29,
+      32,
+      40,
+      44
+    ],
+    "timestamp": "2025-07-23T02:06:01.106002",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      2,
+      23,
+      29,
+      31,
+      37,
+      47
+    ],
+    "timestamp": "2025-07-23T02:06:01.229396",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      9,
+      25,
+      29,
+      39,
+      43,
+      49
+    ],
+    "timestamp": "2025-07-23T02:06:01.359321",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      15,
+      19,
+      29,
+      32,
+      33,
+      43,
+      50
+    ],
+    "timestamp": "2025-07-23T02:06:01.529589",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      24,
+      26,
+      29,
+      30,
+      33,
+      45,
+      46
+    ],
+    "timestamp": "2025-07-23T02:06:01.645660",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      12,
+      15,
+      31,
+      33,
       48,
       49
     ],
-    "timestamp": "2025-07-23T02:01:04.292737",
+    "timestamp": "2025-07-23T02:06:01.762009",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      12,
+      15,
+      22,
+      24,
+      38,
+      50
+    ],
+    "timestamp": "2025-07-23T02:06:01.864527",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      14,
+      15,
+      17,
+      38,
+      41,
+      42,
+      44
+    ],
+    "timestamp": "2025-07-23T02:06:01.963201",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      8,
+      17,
+      20,
+      21,
+      25,
+      29
+    ],
+    "timestamp": "2025-07-23T02:06:02.063544",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      4,
+      16,
+      21,
+      38,
+      39,
+      42,
+      48
+    ],
+    "timestamp": "2025-07-23T02:06:02.171665",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      17,
+      25,
+      30,
+      43,
+      49,
+      50
+    ],
+    "timestamp": "2025-07-23T02:06:02.317593",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      12,
+      23,
+      25,
+      26,
+      31,
+      50
+    ],
+    "timestamp": "2025-07-23T02:06:02.489922",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      2,
+      6,
+      31,
+      36,
+      47,
+      50
+    ],
+    "timestamp": "2025-07-23T02:06:02.632017",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      7,
+      21,
+      23,
+      26,
+      32,
+      34
+    ],
+    "timestamp": "2025-07-23T02:06:02.731659",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      12,
+      13,
+      17,
+      33,
+      44,
+      47,
+      50
+    ],
+    "timestamp": "2025-07-23T02:06:02.846255",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      5,
+      10,
+      41,
+      42,
+      43,
+      50
+    ],
+    "timestamp": "2025-07-23T02:06:02.951704",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      9,
+      15,
+      21,
+      37,
+      42,
+      49
+    ],
+    "timestamp": "2025-07-23T02:06:03.053764",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "era_based",
+    "game": "max",
+    "predicted_numbers": [
+      16,
+      27,
+      28,
+      30,
+      32,
+      44,
+      45
+    ],
+    "timestamp": "2025-07-23T02:06:03.155741",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,

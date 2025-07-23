@@ -20,39 +20,49 @@ class LottoPredictor:
     def predict_numbers(self, game: str, strategy: str = 'auto') -> Dict:
         """
         Main prediction interface
-
-        Args:
-            game: Game code ('649', 'max', etc.)
-            strategy: Strategy to use ('auto' for automatic selection)
-
-        Returns:
-            Dictionary with prediction results and metadata
+        Ensures all strategies receive a list of draw dicts with 'numbers' and 'date' keys.
         """
         try:
             # Load historical data
-            draws = self.data_manager.load_game_data(game)
+            df = self.data_manager.load_game_data(game)
 
-            if draws.empty:
+            if df.empty:
                 self.logger.warning(f"No historical data for {game}")
                 return self._fallback_prediction(game, strategy)
+
+            # Standardize input: convert DataFrame to list of dicts
+            draws = []
+            import numpy as np
+            for _, row in df.iterrows():
+                numbers = row.get('numbers_list', [])
+                if isinstance(numbers, np.ndarray):
+                    numbers = numbers.tolist()
+                elif isinstance(numbers, pd.Series):
+                    numbers = numbers.tolist()
+                # Ensure numbers is a list of ints
+                numbers = [int(n) for n in numbers if n is not None]
+                draws.append({
+                    'numbers': numbers,
+                    'date': row.get('date', None)
+                })
+
+            # Defensive: remove draws with empty numbers
+            draws = [d for d in draws if d['numbers']]
 
             # Determine pick count based on game
             pick_count = 7 if game.lower() == 'max' else 6
 
             # Select strategy
             if strategy == 'auto':
-                # Use adaptive selector to find best strategy
                 strategy_name, strategy_func = self.strategy_selector.select_best_strategy(draws, game)
-                confidence = 'high'  # Adaptive selector picks the best strategy
+                confidence = 'high'
             else:
-                # Use specified strategy
                 if strategy not in self.strategy_selector.strategies:
                     self.logger.warning(f"Unknown strategy: {strategy}, falling back to uniform")
                     strategy = 'uniform'
-
                 strategy_name = strategy
                 strategy_func = self.strategy_selector.strategies[strategy]
-                confidence = 'medium'  # User-selected strategy
+                confidence = 'medium'
 
             # Generate prediction
             predicted_numbers = strategy_func(draws, pick_count)
@@ -70,7 +80,7 @@ class LottoPredictor:
                 'metadata': {
                     'total_draws_analyzed': len(draws),
                     'strategy_backtest_score': performance.get('avg_scores', {}).get(strategy_name, 0.0),
-                    'data_freshness': self._get_data_freshness(draws),
+                    'data_freshness': self._get_data_freshness(df),
                     'timestamp': datetime.now().isoformat()
                 }
             }

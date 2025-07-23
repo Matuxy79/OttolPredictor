@@ -3,195 +3,15 @@
     "strategy": "recency_heavy",
     "game": "max",
     "predicted_numbers": [
-      1,
-      21,
-      31,
-      34,
-      39,
-      44,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.209948",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      9,
-      19,
-      29,
-      35,
-      41,
-      49,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.209948",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
       6,
-      8,
       16,
       22,
-      36,
-      47,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.210965",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      2,
-      4,
-      8,
-      33,
-      41,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.210965",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      9,
-      12,
-      13,
-      15,
-      18,
-      34
-    ],
-    "timestamp": "2025-07-23T02:01:04.210965",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      5,
-      9,
-      15,
-      26,
-      39,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.213326",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      20,
-      22,
-      24,
-      26,
-      29,
-      36,
-      37
-    ],
-    "timestamp": "2025-07-23T02:01:04.214269",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      18,
-      20,
       30,
-      36,
-      45,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.214269",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      11,
-      21,
-      28,
-      31,
-      44,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.215421",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      10,
-      13,
-      16,
-      20,
-      21,
-      22,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.215421",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      7,
-      9,
-      25,
-      36,
+      34,
       41,
-      50
+      46
     ],
-    "timestamp": "2025-07-23T02:01:04.215421",
+    "timestamp": "2025-07-23T02:05:39.075827",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -201,141 +21,15 @@
     "strategy": "recency_heavy",
     "game": "max",
     "predicted_numbers": [
-      3,
-      5,
-      14,
-      23,
-      40,
-      42,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.216439",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      7,
-      13,
-      19,
-      26,
-      37,
-      47,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.216439",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      8,
-      15,
-      24,
-      34,
-      39,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.217318",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      10,
-      21,
-      22,
-      29,
-      34,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.217318",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      4,
-      29,
-      33,
-      39,
-      42,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.217318",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      6,
-      20,
-      26,
-      29,
-      33,
-      37,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.217318",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      11,
+      2,
       12,
       17,
-      21,
-      24,
-      48,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.217318",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      9,
-      14,
-      22,
-      31,
-      34,
+      19,
+      25,
+      28,
       44
     ],
-    "timestamp": "2025-07-23T02:01:04.218330",
+    "timestamp": "2025-07-23T02:05:39.197453",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -345,159 +39,15 @@
     "strategy": "recency_heavy",
     "game": "max",
     "predicted_numbers": [
-      4,
+      9,
       10,
-      15,
-      18,
-      28,
-      38,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      7,
-      8,
-      15,
-      20,
       22,
-      34
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      19,
-      21,
-      25,
-      26,
-      30,
-      33
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      10,
-      11,
-      20,
-      25,
-      36,
-      45,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      23,
       24,
-      28,
-      42,
-      48,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      13,
-      18,
-      21,
-      25,
-      41,
-      42,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      7,
-      8,
-      13,
-      15,
-      25,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      33,
       34,
-      40,
-      45,
-      46,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      14,
-      23,
-      28,
-      30,
-      35,
       40,
       46
     ],
-    "timestamp": "2025-07-23T02:01:04.218330",
+    "timestamp": "2025-07-23T02:05:39.372841",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -507,1275 +57,249 @@
     "strategy": "recency_heavy",
     "game": "max",
     "predicted_numbers": [
-      7,
-      14,
-      21,
-      22,
-      27,
-      33,
-      42
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      37,
-      38,
-      43,
-      47,
-      48,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      17,
-      20,
-      22,
-      23,
-      28,
-      34,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      4,
-      12,
-      14,
-      28,
-      43,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      10,
-      19,
-      23,
-      39,
-      48,
-      49,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      4,
       5,
-      6,
-      7,
-      22,
-      25,
-      40
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      8,
+      16,
       21,
-      24,
-      34,
-      37,
-      43,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      12,
-      15,
-      20,
       26,
-      39,
-      46,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      12,
-      30,
-      32,
-      35,
-      42,
-      44,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      4,
-      18,
-      28,
-      29,
-      33,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      9,
-      11,
-      20,
-      26,
-      29,
-      41,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      11,
-      20,
-      26,
-      41,
-      45,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      7,
-      10,
-      24,
-      27,
-      37,
-      42
-    ],
-    "timestamp": "2025-07-23T02:01:04.218330",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      5,
-      12,
-      16,
-      19,
-      35,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.223236",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      20,
-      26,
-      34,
-      36,
-      42,
-      46,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.223550",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      13,
-      21,
-      37,
-      38,
-      42,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.223550",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      8,
-      15,
-      16,
-      36,
-      42,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.223550",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      14,
-      21,
-      23,
-      27,
-      32,
-      48,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.223550",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      11,
-      13,
-      16,
-      17,
-      22,
-      46,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.223550",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      6,
-      7,
-      12,
-      20,
-      27,
-      37,
-      39
-    ],
-    "timestamp": "2025-07-23T02:01:04.224730",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      22,
-      28,
-      32,
-      33,
-      35,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.224730",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      10,
-      16,
-      33,
-      37,
-      40,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.224730",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      8,
-      28,
-      32,
-      40,
-      41,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.224730",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      12,
-      18,
-      28,
-      38,
-      42,
-      46,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.224730",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      8,
-      9,
-      19,
-      33,
-      49,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.224730",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      14,
-      19,
-      24,
-      27,
-      37,
-      39
-    ],
-    "timestamp": "2025-07-23T02:01:04.225729",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      15,
-      19,
-      27,
-      31,
-      36,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.225729",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      14,
-      21,
-      24,
-      26,
-      32,
-      40
-    ],
-    "timestamp": "2025-07-23T02:01:04.225729",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      6,
-      17,
-      25,
-      29,
-      36,
-      37
-    ],
-    "timestamp": "2025-07-23T02:01:04.225729",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      8,
-      12,
-      14,
-      27,
-      28,
-      31
-    ],
-    "timestamp": "2025-07-23T02:01:04.225729",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      7,
-      11,
-      14,
-      18,
-      34,
-      37
-    ],
-    "timestamp": "2025-07-23T02:01:04.226729",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      14,
-      24,
-      27,
-      35,
-      45,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.226729",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      18,
-      19,
-      21,
-      27,
-      28,
-      39
-    ],
-    "timestamp": "2025-07-23T02:01:04.227733",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      3,
-      13,
-      18,
-      32,
-      40,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.229732",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      6,
-      20,
-      21,
-      29,
-      37,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.231760",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      14,
-      15,
-      17,
-      41,
-      43,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.231760",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      14,
-      15,
-      16,
-      37,
-      46,
-      48,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.231760",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      8,
-      9,
-      15,
-      33,
-      36,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.231760",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      6,
-      8,
-      24,
-      26,
-      28,
-      41,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.233740",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      5,
-      25,
-      27,
-      33,
-      36,
-      42
-    ],
-    "timestamp": "2025-07-23T02:01:04.233740",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      5,
-      15,
-      16,
-      27,
-      41,
-      43
-    ],
-    "timestamp": "2025-07-23T02:01:04.233740",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      4,
-      20,
-      29,
-      33,
-      39,
-      48,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.233740",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      19,
-      21,
-      23,
-      27,
-      32,
-      45,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.233740",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      16,
-      22,
-      23,
-      24,
-      32,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.234756",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      11,
-      20,
-      25,
-      30,
-      38,
-      46,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.234756",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      5,
-      16,
-      25,
-      35,
-      39,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.234756",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      20,
-      23,
-      32,
-      34,
-      40,
-      42,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.234756",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      11,
-      17,
-      22,
-      34,
-      39,
-      48,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.235756",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      17,
-      32,
-      36,
-      40,
-      41,
-      44
-    ],
-    "timestamp": "2025-07-23T02:01:04.235756",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      5,
-      25,
-      34,
-      41,
-      46,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.235756",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      12,
-      23,
-      32,
-      34,
-      47,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.235756",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      6,
-      8,
-      34,
-      36,
-      47,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.236752",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      8,
-      32,
-      38,
-      39,
-      43,
-      46
-    ],
-    "timestamp": "2025-07-23T02:01:04.236752",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      5,
-      12,
-      22,
-      36,
-      37,
-      46,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.236752",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      5,
-      31,
-      32,
-      40,
-      41,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.236752",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      11,
-      22,
-      36,
-      43,
-      45,
-      47
-    ],
-    "timestamp": "2025-07-23T02:01:04.237758",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      5,
-      8,
-      12,
-      29,
-      39,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.237758",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      3,
-      5,
-      7,
-      15,
-      37,
-      44,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.237758",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      16,
-      30,
-      38,
-      43,
-      44,
-      48,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.240366",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      18,
-      24,
-      33,
-      34,
-      47,
-      48,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.240366",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      9,
-      10,
-      12,
-      24,
-      37,
-      39,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.240366",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      12,
-      22,
-      25,
-      27,
-      33,
-      48,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.240366",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      10,
-      12,
-      21,
-      24,
-      44,
-      46,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.240366",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      2,
-      4,
-      15,
-      30,
-      39,
-      42,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.240366",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      5,
-      13,
-      29,
-      32,
-      34,
-      48
-    ],
-    "timestamp": "2025-07-23T02:01:04.241879",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      12,
-      16,
-      19,
-      22,
-      29,
-      33
-    ],
-    "timestamp": "2025-07-23T02:01:04.241879",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      16,
-      23,
-      28,
-      34,
-      36,
-      42
-    ],
-    "timestamp": "2025-07-23T02:01:04.241879",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      8,
-      16,
-      18,
-      23,
-      46,
-      47,
-      50
-    ],
-    "timestamp": "2025-07-23T02:01:04.241879",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      9,
-      12,
-      18,
-      21,
-      30,
-      31,
-      45
-    ],
-    "timestamp": "2025-07-23T02:01:04.241879",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      1,
-      14,
-      18,
-      30,
-      43,
-      48,
-      49
-    ],
-    "timestamp": "2025-07-23T02:01:04.242889",
-    "actual_numbers": [],
-    "match_count": null,
-    "did_win": false,
-    "evaluated": false
-  },
-  {
-    "strategy": "recency_heavy",
-    "game": "max",
-    "predicted_numbers": [
-      9,
-      13,
-      25,
       30,
       33,
-      36,
       41
     ],
-    "timestamp": "2025-07-23T02:01:04.242889",
+    "timestamp": "2025-07-23T02:05:39.548292",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      18,
+      21,
+      26,
+      36,
+      37,
+      47,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:39.697941",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      17,
+      21,
+      30,
+      34,
+      45,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:39.805061",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      20,
+      27,
+      28,
+      34,
+      37,
+      46,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:39.894906",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      10,
+      19,
+      25,
+      28,
+      29,
+      38
+    ],
+    "timestamp": "2025-07-23T02:05:39.995853",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      13,
+      16,
+      22,
+      23,
+      25,
+      37,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:40.158315",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      13,
+      21,
+      23,
+      28,
+      30,
+      40
+    ],
+    "timestamp": "2025-07-23T02:05:40.502216",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      10,
+      22,
+      28,
+      38,
+      42,
+      44
+    ],
+    "timestamp": "2025-07-23T02:05:40.685632",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      6,
+      12,
+      29,
+      31,
+      39,
+      40
+    ],
+    "timestamp": "2025-07-23T02:05:40.845037",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      13,
+      17,
+      29,
+      30,
+      36,
+      38
+    ],
+    "timestamp": "2025-07-23T02:05:41.082055",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      14,
+      21,
+      24,
+      39,
+      45,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:41.214780",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      9,
+      11,
+      12,
+      15,
+      28,
+      41
+    ],
+    "timestamp": "2025-07-23T02:05:41.396250",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      8,
+      10,
+      16,
+      20,
+      36,
+      38,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:41.501878",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      10,
+      15,
+      29,
+      31,
+      33,
+      38,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:41.601861",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
@@ -1786,14 +310,1490 @@
     "game": "max",
     "predicted_numbers": [
       4,
+      7,
+      9,
+      17,
+      21,
+      32,
+      48
+    ],
+    "timestamp": "2025-07-23T02:05:41.698471",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      8,
+      11,
+      22,
+      24,
+      34,
+      38,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:41.791681",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      7,
+      13,
+      22,
+      23,
+      31,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:41.883145",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      19,
+      28,
+      34,
+      36,
+      37,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:42.001620",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
       18,
       21,
       25,
-      27,
+      30,
+      31,
+      32
+    ],
+    "timestamp": "2025-07-23T02:05:42.186218",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      5,
+      18,
+      21,
+      22,
+      32,
+      33
+    ],
+    "timestamp": "2025-07-23T02:05:42.483824",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      10,
+      14,
+      19,
+      21,
+      23,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:42.596243",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      10,
+      14,
+      18,
       28,
+      44,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:42.707762",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      3,
+      8,
+      15,
+      25,
+      37,
+      48
+    ],
+    "timestamp": "2025-07-23T02:05:42.802899",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      8,
+      13,
+      21,
+      31,
+      35,
+      38,
       40
     ],
-    "timestamp": "2025-07-23T02:01:04.242889",
+    "timestamp": "2025-07-23T02:05:42.897941",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      2,
+      23,
+      31,
+      34,
+      42,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:42.986845",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      4,
+      16,
+      24,
+      26,
+      33,
+      43
+    ],
+    "timestamp": "2025-07-23T02:05:43.087167",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      5,
+      14,
+      15,
+      21,
+      40,
+      43
+    ],
+    "timestamp": "2025-07-23T02:05:43.219191",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      9,
+      21,
+      22,
+      35,
+      43,
+      48,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:43.371671",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      10,
+      16,
+      25,
+      29,
+      36,
+      44,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:43.466987",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      15,
+      29,
+      33,
+      42,
+      45,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:43.565385",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      7,
+      8,
+      11,
+      14,
+      24,
+      40
+    ],
+    "timestamp": "2025-07-23T02:05:43.647692",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      17,
+      21,
+      33,
+      37,
+      42,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:43.747195",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      11,
+      13,
+      40,
+      44,
+      45,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:43.838787",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      14,
+      16,
+      17,
+      23,
+      24,
+      29,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:43.914622",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      6,
+      13,
+      34,
+      44,
+      47,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:44.013469",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      6,
+      26,
+      41,
+      44,
+      47,
+      48
+    ],
+    "timestamp": "2025-07-23T02:05:44.122021",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      7,
+      14,
+      24,
+      35,
+      41,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:44.251295",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      8,
+      21,
+      22,
+      25,
+      26,
+      41
+    ],
+    "timestamp": "2025-07-23T02:05:44.416075",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      9,
+      22,
+      24,
+      31,
+      39,
+      40
+    ],
+    "timestamp": "2025-07-23T02:05:44.514796",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      4,
+      35,
+      36,
+      42,
+      43,
+      44
+    ],
+    "timestamp": "2025-07-23T02:05:44.612110",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      15,
+      21,
+      35,
+      36,
+      39,
+      43
+    ],
+    "timestamp": "2025-07-23T02:05:44.698256",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      9,
+      14,
+      29,
+      31,
+      41,
+      42,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:44.801633",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      27,
+      29,
+      30,
+      31,
+      43,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:44.884665",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      13,
+      16,
+      32,
+      38,
+      42,
+      43,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:44.983648",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      4,
+      7,
+      23,
+      25,
+      36,
+      38
+    ],
+    "timestamp": "2025-07-23T02:05:45.068106",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      10,
+      13,
+      19,
+      24,
+      37,
+      45,
+      48
+    ],
+    "timestamp": "2025-07-23T02:05:45.183443",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      9,
+      12,
+      17,
+      19,
+      37,
+      38
+    ],
+    "timestamp": "2025-07-23T02:05:45.339461",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      11,
+      14,
+      16,
+      26,
+      37,
+      40,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:45.475351",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      8,
+      28,
+      32,
+      37,
+      38,
+      41,
+      44
+    ],
+    "timestamp": "2025-07-23T02:05:45.568547",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      13,
+      15,
+      16,
+      19,
+      24,
+      36,
+      43
+    ],
+    "timestamp": "2025-07-23T02:05:45.666984",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      14,
+      15,
+      22,
+      27,
+      39,
+      41,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:45.791855",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      11,
+      27,
+      28,
+      30,
+      44,
+      45,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:45.882730",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      13,
+      15,
+      16,
+      30,
+      33,
+      36
+    ],
+    "timestamp": "2025-07-23T02:05:45.971862",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      4,
+      6,
+      10,
+      29,
+      37,
+      41,
+      48
+    ],
+    "timestamp": "2025-07-23T02:05:46.051365",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      11,
+      13,
+      20,
+      28,
+      37,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:46.186778",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      16,
+      23,
+      37,
+      39,
+      41,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:46.317584",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      22,
+      25,
+      38,
+      41,
+      44,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:46.469896",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      13,
+      18,
+      21,
+      32,
+      36,
+      42,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:46.572014",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      7,
+      28,
+      29,
+      32,
+      35,
+      36
+    ],
+    "timestamp": "2025-07-23T02:05:46.663836",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      17,
+      23,
+      24,
+      25,
+      34,
+      37,
+      41
+    ],
+    "timestamp": "2025-07-23T02:05:46.750934",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      9,
+      15,
+      23,
+      25,
+      42,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:46.863922",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      3,
+      21,
+      27,
+      33,
+      34,
+      35
+    ],
+    "timestamp": "2025-07-23T02:05:46.951723",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      9,
+      19,
+      25,
+      27,
+      47,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:47.042221",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      24,
+      27,
+      32,
+      35,
+      36,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:47.161804",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      14,
+      18,
+      29,
+      30,
+      49,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:47.291865",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      8,
+      10,
+      11,
+      12,
+      26,
+      33
+    ],
+    "timestamp": "2025-07-23T02:05:47.442574",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      11,
+      22,
+      30,
+      34,
+      35,
+      42,
+      48
+    ],
+    "timestamp": "2025-07-23T02:05:47.533401",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      12,
+      19,
+      26,
+      31,
+      39,
+      41
+    ],
+    "timestamp": "2025-07-23T02:05:47.635493",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      23,
+      27,
+      28,
+      34,
+      37,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:47.717917",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      6,
+      7,
+      13,
+      28,
+      34,
+      36
+    ],
+    "timestamp": "2025-07-23T02:05:47.820943",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      6,
+      13,
+      21,
+      28,
+      32,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:47.903264",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      9,
+      10,
+      14,
+      20,
+      38,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:48.000503",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      12,
+      18,
+      33,
+      40,
+      45,
+      46,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:48.093678",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      21,
+      23,
+      25,
+      26,
+      30,
+      41
+    ],
+    "timestamp": "2025-07-23T02:05:48.219716",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      8,
+      15,
+      23,
+      38,
+      40,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:48.363722",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      8,
+      20,
+      21,
+      29,
+      34,
+      39,
+      41
+    ],
+    "timestamp": "2025-07-23T02:05:48.483300",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      11,
+      32,
+      35,
+      38,
+      45,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:48.582436",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      10,
+      11,
+      16,
+      28,
+      39,
+      40
+    ],
+    "timestamp": "2025-07-23T02:05:48.671829",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      9,
+      11,
+      19,
+      30,
+      38,
+      40
+    ],
+    "timestamp": "2025-07-23T02:05:48.752671",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      11,
+      18,
+      28,
+      31,
+      39,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:48.856064",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      15,
+      28,
+      30,
+      38,
+      40,
+      43,
+      48
+    ],
+    "timestamp": "2025-07-23T02:05:48.941668",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      11,
+      12,
+      16,
+      30,
+      32,
+      34,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:49.034928",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      13,
+      14,
+      15,
+      19,
+      22,
+      40
+    ],
+    "timestamp": "2025-07-23T02:05:49.150093",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      22,
+      28,
+      32,
+      37,
+      39,
+      40
+    ],
+    "timestamp": "2025-07-23T02:05:49.262060",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      5,
+      8,
+      16,
+      30,
+      38,
+      40,
+      46
+    ],
+    "timestamp": "2025-07-23T02:05:49.427747",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      14,
+      23,
+      32,
+      37,
+      38,
+      47,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:49.540999",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      8,
+      10,
+      14,
+      17,
+      22,
+      34,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:49.638425",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      13,
+      15,
+      16,
+      21,
+      48,
+      50
+    ],
+    "timestamp": "2025-07-23T02:05:49.742017",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      12,
+      16,
+      18,
+      20,
+      26,
+      30,
+      43
+    ],
+    "timestamp": "2025-07-23T02:05:49.837876",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      11,
+      14,
+      18,
+      20,
+      35,
+      41
+    ],
+    "timestamp": "2025-07-23T02:05:49.921289",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      6,
+      12,
+      19,
+      20,
+      22,
+      44,
+      47
+    ],
+    "timestamp": "2025-07-23T02:05:50.002611",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      4,
+      6,
+      13,
+      20,
+      27,
+      33,
+      36
+    ],
+    "timestamp": "2025-07-23T02:05:50.123881",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      2,
+      16,
+      20,
+      27,
+      32,
+      33,
+      35
+    ],
+    "timestamp": "2025-07-23T02:05:50.244893",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      7,
+      23,
+      25,
+      32,
+      39,
+      42,
+      45
+    ],
+    "timestamp": "2025-07-23T02:05:50.403289",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      3,
+      4,
+      5,
+      16,
+      24,
+      42,
+      49
+    ],
+    "timestamp": "2025-07-23T02:05:50.511858",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      10,
+      12,
+      13,
+      15,
+      20,
+      37,
+      38
+    ],
+    "timestamp": "2025-07-23T02:05:50.611661",
+    "actual_numbers": [],
+    "match_count": null,
+    "did_win": false,
+    "evaluated": false
+  },
+  {
+    "strategy": "recency_heavy",
+    "game": "max",
+    "predicted_numbers": [
+      1,
+      15,
+      18,
+      20,
+      30,
+      38,
+      42
+    ],
+    "timestamp": "2025-07-23T02:05:50.711751",
     "actual_numbers": [],
     "match_count": null,
     "did_win": false,
