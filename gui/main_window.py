@@ -40,12 +40,14 @@ from analytics import get_analytics_engine
 from wclc_scraper import WCLCScraper
 from config import AppConfig
 from tracking.prediction_logger import PredictionLogger
+from core.activity_logger import ActivityLogger
 
 # Import new modules
 from core.data_manager import get_data_manager
 from core.predictor import LottoPredictor
 from strategies.adaptive_selector import AdaptiveStrategySelector
 from gui.strategy_dashboard import StrategyDashboard
+from core.activity_logger import ActivityLogger
 import json
 
 logger = get_logger(__name__)
@@ -160,6 +162,11 @@ class SaskatoonLottoPredictor(QMainWindow):
 
         # Initialize logger
         self.logger = logging.getLogger(__name__)
+        
+        # Initialize activity logger
+        from core.activity_logger import ActivityLogger
+        self.activity_logger = ActivityLogger.get_instance()
+        self.activity_logger.register_callback(self.update_activity_panel)
 
         # Initialize prediction components
         self.data_manager = get_data_manager()
@@ -193,6 +200,10 @@ class SaskatoonLottoPredictor(QMainWindow):
         """Initialize the user interface"""
         self.setWindowTitle("🎲 Saskatoon Lotto Predictor")
         self.setGeometry(100, 100, 1200, 800)
+        
+        # Initialize activity logger
+        self.activity_logger = ActivityLogger.get_instance()
+        self.activity_logger.register_callback(self.update_activity_panel)
 
         # Set application style
         self.setStyleSheet("""
@@ -406,14 +417,82 @@ class SaskatoonLottoPredictor(QMainWindow):
         stats_layout.addWidget(self.stats_display_label, 2, 0, 1, 2)
         layout.addWidget(self.stats_group)
 
-        # Recent activity
-        activity_group = QGroupBox("📅 Recent Activity")
+        # Recent activity with enhanced styling
+        activity_group = QGroupBox("� Activity Log")
+        activity_group.setStyleSheet("""
+            QGroupBox {
+                background-color: #ffffff;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                margin-top: 1em;
+                font-size: 14px;
+            }
+            QGroupBox::title {
+                background-color: #ffffff;
+                padding: 0 10px;
+                color: #2c3e50;
+                subcontrol-origin: margin;
+                subcontrol-position: top center;
+                font-weight: bold;
+            }
+        """)
         activity_layout = QVBoxLayout(activity_group)
 
+        # Create a custom styled QTextEdit for activity log
         self.recent_activity_text = QTextEdit()
-        self.recent_activity_text.setMaximumHeight(150)
         self.recent_activity_text.setReadOnly(True)
+        self.recent_activity_text.setMinimumHeight(150)
+        self.recent_activity_text.setMaximumHeight(200)
+        
+        # Add clear button
+        clear_button = QPushButton("Clear Activity Log")
+        clear_button.clicked.connect(self.clear_activity_log)
+        clear_button.setMaximumWidth(150)
+        
+        # Add to layout
+        activity_layout.addWidget(self.recent_activity_text)
+        activity_layout.addWidget(clear_button, alignment=Qt.AlignRight)
+        
+        # Update with recent activities
+        self.update_activity_panel()
+        
+        self.recent_activity_text.setStyleSheet("""
+            QTextEdit {
+                background-color: #f8f9fa;
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                padding: 8px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+        """)
 
+        # Header for the activity log
+        header_layout = QHBoxLayout()
+        header_label = QLabel("Recent System Events")
+        header_label.setStyleSheet("font-weight: bold; color: #2c3e50;")
+        header_layout.addWidget(header_label)
+        
+        # Add clear button
+        self.clear_activity_btn = QPushButton("Clear")
+        self.clear_activity_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+                color: #666;
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                color: #ff4444;
+            }
+        """)
+        self.clear_activity_btn.clicked.connect(self.clear_activity_log)
+        header_layout.addWidget(self.clear_activity_btn)
+        header_layout.addStretch()
+        
+        activity_layout.addLayout(header_layout)
         activity_layout.addWidget(self.recent_activity_text)
         layout.addWidget(activity_group)
 
@@ -876,6 +955,55 @@ class SaskatoonLottoPredictor(QMainWindow):
         # Add the tab
         self.tab_widget.addTab(scraping_widget, "🔄 Data Scraper")
 
+    def add_activity(self, message: str, activity_type: str = "info", details: dict = None):
+        """Add a message to the activity log with rich formatting"""
+        self.add_activity_message(message, activity_type, details)
+
+    def clear_activity_log(self):
+        """Clear the activity log"""
+        if hasattr(self, 'activity_logger'):
+            self.activity_logger.clear_history()
+            self.recent_activity_text.clear()
+
+    def update_activity_panel(self, new_activity=None):
+        """Update the activity panel with formatted activities"""
+        if not hasattr(self, 'recent_activity_text'):
+            return
+            
+        try:
+            activities = self.activity_logger.get_recent_activities(10)
+            
+            if new_activity:
+                # Format and add new activity at the top
+                formatted = self.activity_logger.format_activity_for_display(new_activity)
+                html_activity = f"""
+                <div style="margin-bottom: 8px; padding: 8px; {'; '.join([f'{k}: {v}' for k,v in formatted['style'].items()])}">
+                    <span style="font-weight: bold;">{formatted['message']}</span><br>
+                    <span style="color: #666; font-size: 0.9em;">
+                        {formatted['timestamp']} | {formatted['source']}
+                    </span>
+                </div>
+                """
+                current_html = self.recent_activity_text.toHtml()
+                self.recent_activity_text.setHtml(html_activity + current_html)
+            else:
+                # Full refresh of activity panel
+                html_content = []
+                for activity in activities:
+                    formatted = self.activity_logger.format_activity_for_display(activity)
+                    html_content.append(f"""
+                    <div style="margin-bottom: 8px; padding: 8px; {'; '.join([f'{k}: {v}' for k,v in formatted['style'].items()])}">
+                        <span style="font-weight: bold;">{formatted['message']}</span><br>
+                        <span style="color: #666; font-size: 0.9em;">
+                            {formatted['timestamp']} | {formatted['source']}
+                        </span>
+                    </div>
+                    """)
+                self.recent_activity_text.setHtml('\n'.join(html_content))
+                
+        except Exception as e:
+            logging.error(f"Error updating activity panel: {e}")
+
     def create_status_bar(self):
         """Create status bar"""
         self.status_bar = QStatusBar()
@@ -904,7 +1032,26 @@ class SaskatoonLottoPredictor(QMainWindow):
             if AppConfig.get_game_display_name(game_code) == game_text:
                 self.current_game = game_code
                 break
+                
         self.status_bar.showMessage(f"Switched to {game_text}")
+        
+        # Log the game change activity
+        data = self.data_manager.load_game_data(self.current_game, full_refresh=False)
+        draw_count = len(data) if not data.empty else 0
+        
+        if draw_count > 0:
+            date_range = f"{data['date'].min()} to {data['date'].max()}"
+            self.add_activity(
+                f"Switched to {game_text}",
+                "data",
+                f"Loading {draw_count:,} draws ({date_range})"
+            )
+        else:
+            self.add_activity(
+                f"Switched to {game_text}",
+                "error",
+                "No data available"
+            )
 
         # Update all displays
         self.update_dashboard()
@@ -931,9 +1078,30 @@ class SaskatoonLottoPredictor(QMainWindow):
         # Update strategy info in the prediction tab
         if hasattr(self, 'strategy_info'):
             if strategy == 'auto':
-                self.strategy_info.setText("Using automatic strategy selection based on historical performance")
+                info_text = "Using automatic strategy selection based on historical performance"
+                self.strategy_info.setText(info_text)
+                self.add_activity(
+                    "Switched to Auto Strategy Selection",
+                    "strategy",
+                    "Using adaptive strategy selection based on performance metrics"
+                )
             else:
-                self.strategy_info.setText(f"Using {strategy_name} strategy")
+                info_text = f"Using {strategy_name} strategy"
+                self.strategy_info.setText(info_text)
+                
+                # Get strategy performance if available
+                try:
+                    performance = self.strategy_selector.get_strategy_performance(strategy)
+                    win_rate = performance.get('win_rate', 0) * 100 if performance else 0
+                    details = f"Historical win rate: {win_rate:.1f}%"
+                except:
+                    details = "Performance data not available"
+                
+                self.add_activity(
+                    f"Selected {strategy_name} Strategy",
+                    "strategy",
+                    details
+                )
 
         # Log the strategy change
         logger.info(f"Strategy changed to {strategy_name} ({strategy})")
@@ -1218,16 +1386,15 @@ class SaskatoonLottoPredictor(QMainWindow):
             if 'recent_draws' in stats:
                 self.recent_draws_label.setText(f"Recent: {recent_count}")
 
-            # Update recent activity
-            self.recent_activity_text.clear()
+            # Log activities
             for message in stats['activity_messages']:
-                self.recent_activity_text.append(message)
+                self.add_activity_message(message, "data")
+                
         except Exception as e:
-            self.status_bar.showMessage(f"Error loading data: {e}")
-            # Set fallback values for Quick Stats
+            error_msg = f"Error loading data: {e}"
+            self.status_bar.showMessage(error_msg)
             self.stats_display_label.setText("Error loading Quick Stats")
-            self.recent_activity_text.clear()
-            self.recent_activity_text.append("⚠️ Error loading data. Please try refreshing.")
+            self.add_activity_message("Error loading data. Please try refreshing.", "error", {"error": str(e)})
 
     def update_recent_draws_table(self):
         """Update the recent draws table (legacy method, now calls update_draws_table)"""
@@ -1243,6 +1410,51 @@ class SaskatoonLottoPredictor(QMainWindow):
         # Call the new method
         self.update_draws_table()
 
+    def setup_activity_panel(self):
+        """Setup the recent activity panel"""
+        activity_group = QGroupBox("📝 Recent Activity")
+        activity_layout = QVBoxLayout(activity_group)
+        
+        self.recent_activity_text = QTextEdit()
+        self.recent_activity_text.setReadOnly(True)
+        self.recent_activity_text.setMinimumHeight(150)
+        self.recent_activity_text.setMaximumHeight(200)
+        self.recent_activity_text.setStyleSheet("""
+            QTextEdit {
+                background-color: #f8f9fa;
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                padding: 8px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+        """)
+        
+        # Add clear button
+        clear_button = QPushButton("Clear Activity Log")
+        clear_button.clicked.connect(self.clear_activity_log)
+        clear_button.setMaximumWidth(150)
+        clear_button.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+        """)
+        
+        # Add to layout
+        activity_layout.addWidget(self.recent_activity_text)
+        activity_layout.addWidget(clear_button, alignment=Qt.AlignRight)
+        
+        return activity_group
+
     def refresh_data(self, full_refresh=False):
         """
         Refresh data from files and/or scraping
@@ -1255,15 +1467,30 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.status_bar.showMessage("Refreshing data...")
 
         try:
+            # Log the start of refresh operation
+            self.add_activity_message(
+                "Starting data refresh...",
+                "data",
+                {"type": "full" if full_refresh else "smart"}
+            )
+
             if full_refresh:
                 # Full refresh of all data (slower but comprehensive)
-                self.status_bar.showMessage("Performing full data refresh (this may take a while)...")
+                status_msg = "Performing full data refresh (this may take a while)..."
+                self.status_bar.showMessage(status_msg)
+                self.add_activity_message(status_msg, "data")
+                
                 self.data_manager.refresh_all_data()
-                self.status_bar.showMessage("Full data refresh completed successfully")
+                
+                success_msg = "Full data refresh completed successfully"
+                self.status_bar.showMessage(success_msg)
+                self.add_activity_message(success_msg, "data")
             else:
                 # Smart refresh - only get recent data (faster)
-                self.status_bar.showMessage("Performing smart refresh of recent data...")
                 game = self.get_current_game_code()
+                status_msg = f"Performing smart refresh of recent data for {game}..."
+                self.status_bar.showMessage(status_msg)
+                self.add_activity_message(status_msg, "data")
 
                 # Use the new refresh_recent_data_only method
                 self.data_manager.refresh_recent_data_only(game)
@@ -1814,24 +2041,25 @@ class SaskatoonLottoPredictor(QMainWindow):
         except Exception as e:
             logger.error(f"Error updating prediction performance: {e}")
 
-    def add_activity_message(self, message):
-        """Add a message to the recent activity log"""
+    def add_activity_message(self, message: str, activity_type: str = "info", details: dict = None):
+        """
+        Add a message to the recent activity log
+        
+        Args:
+            message: The activity message to display
+            activity_type: Type of activity (data/prediction/analysis/error/maintenance)
+            details: Optional dict with additional activity details
+        """
         try:
-            if hasattr(self, 'recent_activity_text'):
-                # Add timestamp to message
-                timestamp = datetime.now().strftime("%H:%M:%S")
-                formatted_message = f"[{timestamp}] {message}"
-
-                # Add to activity log
-                self.recent_activity_text.append(formatted_message)
-
-                # Scroll to bottom to show latest message
-                self.recent_activity_text.verticalScrollBar().setValue(
-                    self.recent_activity_text.verticalScrollBar().maximum()
+            if hasattr(self, 'activity_logger'):
+                self.activity_logger.log_activity(
+                    message,
+                    activity_type,
+                    details or {},
+                    "gui"
                 )
-
-                # Also log to application log
-                logger.info(f"Activity: {message}")
+            # Also log to application log
+            logger.info(f"Activity: {message}")
         except Exception as e:
             logger.error(f"Failed to add activity message: {e}")
 
@@ -1870,6 +2098,58 @@ class SaskatoonLottoPredictor(QMainWindow):
 
         # Add tab to main tab widget
         self.tab_widget.addTab(data_entry_tab, "Data Entry")
+
+    def update_activity_panel(self, new_activity=None):
+        """Update the activity panel with formatted activities"""
+        if not hasattr(self, 'recent_activity_text'):
+            return
+            
+        try:
+            activities = self.activity_logger.get_recent_activities(10)
+            
+            if new_activity:
+                # Format and add new activity at the top
+                formatted = self.activity_logger.format_activity_for_display(new_activity)
+                html_activity = f"""
+                <div style="margin-bottom: 8px; padding: 8px; {'; '.join([f'{k}: {v}' for k,v in formatted['style'].items()])}">
+                    <span style="font-weight: bold;">{formatted['message']}</span><br>
+                    <span style="color: #666; font-size: 0.9em;">
+                        {formatted['timestamp']} | {formatted['source']}
+                    </span>
+                </div>
+                """
+                current_html = self.recent_activity_text.toHtml()
+                self.recent_activity_text.setHtml(html_activity + current_html)
+            else:
+                # Full refresh of activity panel
+                html_content = []
+                for activity in activities:
+                    formatted = self.activity_logger.format_activity_for_display(activity)
+                    html_content.append(f"""
+                    <div style="margin-bottom: 8px; padding: 8px; {'; '.join([f'{k}: {v}' for k,v in formatted['style'].items()])}">
+                        <span style="font-weight: bold;">{formatted['message']}</span><br>
+                        <span style="color: #666; font-size: 0.9em;">
+                            {formatted['timestamp']} | {formatted['source']}
+                        </span>
+                    </div>
+                    """)
+                self.recent_activity_text.setHtml('\n'.join(html_content))
+                
+        except Exception as e:
+            logging.error(f"Error updating activity panel: {e}")
+
+    def clear_activity_log(self):
+        """Clear the activity log"""
+        if hasattr(self, 'activity_logger'):
+            self.activity_logger.clear_history()
+            if hasattr(self, 'recent_activity_text'):
+                self.recent_activity_text.clear()
+                self.activity_logger.log_activity(
+                    "Activity log cleared",
+                    "maintenance",
+                    {"source": "user"},
+                    "gui"
+                )
 
 
 def main():

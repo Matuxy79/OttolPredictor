@@ -94,12 +94,6 @@ def run_cli_mode():
             from data_sources.live_scraper import LiveResultsScraper
             from core.data_manager import get_data_manager
 
-            # Check if we're being asked to run the scraper directly
-            if '--legacy-scraper' in sys.argv:
-                # Remove the flag and use the legacy scraper
-                sys.argv.remove('--legacy-scraper')
-                raise ImportError("Using legacy scraper as requested")
-
             logger.info("Running in command-line mode with enhanced data sources")
 
             # Parse arguments
@@ -184,17 +178,11 @@ def run_cli_mode():
 
             return 0
 
-        except ImportError as e:
-            logger.info(f"Enhanced data sources not available, falling back to legacy scraper: {e}")
-            # Fall back to the original scraper
-            pass
+        except Exception as e:
+            logger.warning(f"Enhanced data sources initialization failed: {e}")
+            # Fall back to the original scraper if initialization failed
+            return run_legacy_scraper()
 
-        # Import the original scraper module as fallback
-        from wclc_scraper import run_scraper
-        logger.info("Running in command-line mode with legacy scraper")
-
-        # Call the run_scraper function from wclc_scraper.py
-        return run_scraper()
     except ImportError as e:
         logger.error(f"Failed to import scraper module: {e}")
         print(f"Error: Failed to import scraper module: {e}")
@@ -203,6 +191,12 @@ def run_cli_mode():
         logger.error(f"Error running scraper: {e}")
         print(f"Error: Failed to run scraper: {e}")
         return 1
+
+def run_legacy_scraper():
+    """Run the legacy scraper as a fallback."""
+    from wclc_scraper import run_scraper
+    logger.info("Running in command-line mode with legacy scraper")
+    return run_scraper()
 
 if __name__ == '__main__':
     sys.exit(main())

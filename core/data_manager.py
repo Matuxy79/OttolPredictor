@@ -26,11 +26,21 @@ import logging
 from datetime import datetime, timedelta
 import json
 
+from core.activity_logger import ActivityLogger
+
 # Import components
 from data_sources.pdf_parser import WCLCPDFParser
 from core.data_validator import DataValidator
 
 class LotteryDataManager:
+    def __init__(self, data_dir: str):
+        self.data_dir = data_dir
+        self._cache = {}
+        self.logger = logging.getLogger(__name__)
+        self.pdf_parser = WCLCPDFParser()
+        self.validator = DataValidator()
+        self.activity_logger = ActivityLogger()
+
     def get_most_recent_draw(self, game: str) -> Optional[dict]:
         """Return the most recent draw record for the specified game."""
         data = self.load_game_data(game)
@@ -173,6 +183,13 @@ class LotteryDataManager:
         }
         if not data.empty and 'numbers_list' in data.columns:
             summary['total_draws'] = len(data)
+            # Log the analysis activity
+            self.activity_logger.log_activity(
+                f"Generated summary for {summary['game_display_name']}",
+                "analysis",
+                {"total_draws": len(data), "game": game},
+                "data_manager"
+            )
             # Date range
             if 'date' in data.columns:
                 try:
@@ -211,6 +228,10 @@ class LotteryDataManager:
         self.processed_dir = os.path.join(data_dir, "processed")
         self.logger = logging.getLogger(__name__)
 
+        # Initialize activity logger
+        from core.activity_logger import ActivityLogger
+        self.activity_logger = ActivityLogger.get_instance()
+
         # Initialize data sources
         self.pdf_parser = WCLCPDFParser(data_dir)
 
@@ -228,7 +249,13 @@ class LotteryDataManager:
         if not full_refresh and cache_key in self._cache:
             cache_entry = self._cache[cache_key]
             if datetime.now() - cache_entry['timestamp'] < timedelta(hours=1):
-                self.logger.info(f"Using cached data for {game} (age: {datetime.now() - cache_entry['timestamp']})")
+                age = datetime.now() - cache_entry['timestamp']
+                self.activity_logger.log_activity(
+                    f"Using cached data for {game}",
+                    "data",
+                    {"age_minutes": age.total_seconds() / 60, "cache_key": cache_key},
+                    "data_manager"
+                )
                 return cache_entry['data']
 
         self.logger.info(f"Loading data for game: {game}, full_refresh: {full_refresh}")
