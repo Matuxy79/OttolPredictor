@@ -159,7 +159,6 @@ class SaskatoonLottoPredictor(QMainWindow):
         super().__init__()
 
         # Initialize logger
-        import logging
         self.logger = logging.getLogger(__name__)
 
         # Initialize prediction components
@@ -171,8 +170,23 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.current_prediction = None
         self.current_strategy = 'auto'  # Default to auto strategy selection
 
+        # Dashboard QLabel references (set to None, always re-created in create_dashboard_tab)
+        self.data_649_status = None
+        self.data_max_status = None
+        self.recent_649_display = None
+        self.recent_max_display = None
+        self.total_draws_label = None
+        self.date_range_label = None
+        self.last_updated_label = None
+        self.stats_group = None
+        self.stats_game_combo = None
+        self.stats_type_combo = None
+        self.stats_display_label = None
+        self.recent_activity_text = None
+
         self.thread_pool = QThreadPool()
         self.init_ui()
+        # Only load data after UI and all widgets are created
         self.load_initial_data()
 
     def init_ui(self):
@@ -299,7 +313,8 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.tab_widget = QTabWidget()
 
         # Dashboard tab
-        self.create_dashboard_tab()
+        dashboard_widget = self.create_dashboard_tab()
+        self.tab_widget.addTab(dashboard_widget, "📊 Dashboard")
 
         # Recent Draws tab
         self.create_recent_draws_tab()
@@ -324,18 +339,21 @@ class SaskatoonLottoPredictor(QMainWindow):
     def create_dashboard_tab(self):
         """Create dashboard overview tab"""
         dashboard_widget = QWidget()
+    def create_dashboard_tab(self):
+        """Create dashboard overview tab"""
+        dashboard_widget = QWidget()
         layout = QVBoxLayout(dashboard_widget)
 
         # Data status section
         data_status_group = QGroupBox("📈 Data Status")
         data_status_layout = QVBoxLayout(data_status_group)
 
+        # Always (re)create these labels here
         self.data_649_status = QLabel("❓ Lotto 6/49: Checking data...")
         self.data_max_status = QLabel("❓ Lotto Max: Checking data...")
 
         data_status_layout.addWidget(self.data_649_status)
         data_status_layout.addWidget(self.data_max_status)
-
         layout.addWidget(data_status_group)
 
         # Recent draws section
@@ -347,7 +365,6 @@ class SaskatoonLottoPredictor(QMainWindow):
 
         recent_draws_layout.addWidget(self.recent_649_display)
         recent_draws_layout.addWidget(self.recent_max_display)
-
         layout.addWidget(recent_draws_group)
 
         # Game summary section
@@ -361,21 +378,32 @@ class SaskatoonLottoPredictor(QMainWindow):
         summary_layout.addWidget(self.total_draws_label, 0, 0)
         summary_layout.addWidget(self.date_range_label, 0, 1)
         summary_layout.addWidget(self.last_updated_label, 1, 0, 1, 2)
-
         layout.addWidget(summary_group)
 
-        # Quick stats section with dynamic title
+        # Quick stats section with dynamic dropdowns
         self.stats_group = QGroupBox("🔥 Quick Stats")
         stats_layout = QGridLayout(self.stats_group)
 
-        self.hot_numbers_label = QLabel("Hot Numbers: Loading...")
-        self.cold_numbers_label = QLabel("Cold Numbers: Loading...")
+        # Dropdown for game selection
+        self.stats_game_combo = QComboBox()
+        self.stats_game_combo.addItem("Lotto 6/49", "649")
+        self.stats_game_combo.addItem("Lotto Max", "max")
+        self.stats_game_combo.currentIndexChanged.connect(self.update_quick_stats)
+        stats_layout.addWidget(QLabel("Game:"), 0, 0)
+        stats_layout.addWidget(self.stats_game_combo, 0, 1)
 
-        stats_layout.addWidget(QLabel("Most Frequent:"), 0, 0)
-        stats_layout.addWidget(self.hot_numbers_label, 0, 1)
-        stats_layout.addWidget(QLabel("Least Frequent:"), 1, 0)
-        stats_layout.addWidget(self.cold_numbers_label, 1, 1)
+        # Dropdown for stat type selection
+        self.stats_type_combo = QComboBox()
+        self.stats_type_combo.addItem("Hot Numbers", "hot")
+        self.stats_type_combo.addItem("Cold Numbers", "cold")
+        self.stats_type_combo.addItem("Most Common Combo", "combo")
+        self.stats_type_combo.currentIndexChanged.connect(self.update_quick_stats)
+        stats_layout.addWidget(QLabel("Stat Type:"), 1, 0)
+        stats_layout.addWidget(self.stats_type_combo, 1, 1)
 
+        # Display label for selected stat
+        self.stats_display_label = QLabel("Loading...")
+        stats_layout.addWidget(self.stats_display_label, 2, 0, 1, 2)
         layout.addWidget(self.stats_group)
 
         # Recent activity
@@ -390,8 +418,36 @@ class SaskatoonLottoPredictor(QMainWindow):
         layout.addWidget(activity_group)
 
         layout.addStretch()
-
-        self.tab_widget.addTab(dashboard_widget, "📊 Dashboard")
+        # Initialize quick stats display
+        self.update_quick_stats()
+        return dashboard_widget
+    def update_quick_stats(self):
+        """Update the quick stats display label based on dropdowns"""
+        if not self.stats_game_combo or not self.stats_type_combo or not self.stats_display_label:
+            return
+        game_code = self.stats_game_combo.currentData()
+        stat_type = self.stats_type_combo.currentData()
+        if stat_type == "hot":
+            hot_numbers = self.data_manager.get_most_frequent_numbers(game_code)
+            if hot_numbers:
+                hot_str = ', '.join(f"[{n:02d}]" for n in hot_numbers[:6])
+                self.stats_display_label.setText(f"Hot Numbers: {hot_str}")
+            else:
+                self.stats_display_label.setText("Hot Numbers: (No data)")
+        elif stat_type == "cold":
+            cold_numbers = self.data_manager.get_least_frequent_numbers(game_code)
+            if cold_numbers:
+                cold_str = ', '.join(f"[{n:02d}]" for n in cold_numbers[:6])
+                self.stats_display_label.setText(f"Cold Numbers: {cold_str}")
+            else:
+                self.stats_display_label.setText("Cold Numbers: (No data)")
+        elif stat_type == "combo":
+            combo = self.data_manager.get_most_common_combination(game_code)
+            if combo:
+                combo_str = ' '.join(f"[{n:02d}]" for n in combo)
+                self.stats_display_label.setText(f"Most Common Combo: {combo_str}")
+            else:
+                self.stats_display_label.setText("Most Common Combo: (No data)")
 
     def create_recent_draws_tab(self):
         """Create recent draws table tab"""
@@ -1038,27 +1094,23 @@ class SaskatoonLottoPredictor(QMainWindow):
     def update_recent_draws(self):
         """Update recent draws display with latest results"""
         try:
-            # Fix: Use 'count' instead of 'days'
-            recent_649 = self.data_manager.get_recent_draws('649', count=1)
+            # Lotto 6/49
+            recent_649 = self.data_manager.get_most_recent_draw('649')
             if recent_649:
-                draw = recent_649[0]
-                numbers = draw.get('numbers', [])
-                date = draw.get('date', 'Unknown date')
-                bonus = draw.get('bonus', '')
-
+                numbers = recent_649.get('numbers', [])
+                date = recent_649.get('date', 'Unknown date')
+                bonus = recent_649.get('bonus', '')
                 numbers_str = ' '.join(f"[{n:02d}]" for n in numbers)
                 bonus_str = f" + Bonus: {bonus}" if bonus else ""
                 self.recent_649_display.setText(f"🎯 Lotto 6/49 - {date}\n{numbers_str}{bonus_str}")
             else:
                 self.recent_649_display.setText("❌ No recent 6/49 draws available")
 
-            # Fix: Same for Lotto Max
-            recent_max = self.data_manager.get_recent_draws('max', count=1)
+            # Lotto Max
+            recent_max = self.data_manager.get_most_recent_draw('max')
             if recent_max:
-                draw = recent_max[0]
-                numbers = draw.get('numbers', [])
-                date = draw.get('date', 'Unknown date')
-
+                numbers = recent_max.get('numbers', [])
+                date = recent_max.get('date', 'Unknown date')
                 numbers_str = ' '.join(f"[{n:02d}]" for n in numbers)
                 self.recent_max_display.setText(f"🎯 Lotto Max - {date}\n{numbers_str}")
             else:
@@ -1157,19 +1209,9 @@ class SaskatoonLottoPredictor(QMainWindow):
             self.date_range_label.setText(f"Date Range: {stats['date_range']}")
             self.last_updated_label.setText(f"Last Updated: {stats['last_updated']}")
 
-            # Hot/Cold numbers with fallbacks
-            hot_numbers = stats.get('hot_numbers', '')
-            cold_numbers = stats.get('cold_numbers', '')
 
-            if hot_numbers and hot_numbers != 'No data':
-                self.hot_numbers_label.setText(f"Hot: {hot_numbers}")
-            else:
-                self.hot_numbers_label.setText("Hot: (No data)")
-
-            if cold_numbers and cold_numbers != 'No data':
-                self.cold_numbers_label.setText(f"Cold: {cold_numbers}")
-            else:
-                self.cold_numbers_label.setText("Cold: (No data)")
+            # Quick Stats now handled by dropdown and stats_display_label
+            self.update_quick_stats()
 
             # Recent draws count
             recent_count = stats.get('recent_draws', 0)
@@ -1180,14 +1222,10 @@ class SaskatoonLottoPredictor(QMainWindow):
             self.recent_activity_text.clear()
             for message in stats['activity_messages']:
                 self.recent_activity_text.append(message)
-
         except Exception as e:
-            logger.error(f"Error updating dashboard: {e}")
             self.status_bar.showMessage(f"Error loading data: {e}")
-
-            # Set fallback values
-            self.hot_numbers_label.setText("Hot: (Error)")
-            self.cold_numbers_label.setText("Cold: (Error)")
+            # Set fallback values for Quick Stats
+            self.stats_display_label.setText("Error loading Quick Stats")
             self.recent_activity_text.clear()
             self.recent_activity_text.append("⚠️ Error loading data. Please try refreshing.")
 

@@ -3,6 +3,7 @@ import os
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import logging
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -104,10 +105,11 @@ class PredictionLogger:
                 if game_data.empty:
                     continue
 
-                # Look for draws after the prediction date
+                # Look for draws after the prediction date using the 'date' field
+                game_data['date_dt'] = pd.to_datetime(game_data['date'], errors='coerce')
                 recent_draws = game_data[
-                    game_data['date_parsed'] > prediction_date
-                ].sort_values('date_parsed')
+                    game_data['date_dt'] > prediction_date
+                ].sort_values('date_dt')
 
                 if not recent_draws.empty:
                     # Use the first draw after prediction

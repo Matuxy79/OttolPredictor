@@ -6,14 +6,14 @@ from dataclasses import dataclass
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 import pandas as pd
+import logging
 from config import AppConfig
 
 @dataclass
 class DrawRecord:
     """Standardized lottery draw record"""
     game: str
-    date: str
-    date_parsed: Optional[datetime]
+    date: str  # Format: YYYY-MM-DD
     numbers: List[int]
     bonus: Optional[int] = None
     gold_ball: Optional[int] = None
@@ -60,13 +60,23 @@ class DrawRecord:
         return {
             'game': self.game,
             'date': self.date,
-            'date_parsed': self.date_parsed.isoformat() if self.date_parsed else None,
             'numbers': ','.join(map(str, self.numbers)),
             'bonus': self.bonus,
             'gold_ball': self.gold_ball,
             'scraped_at': self.scraped_at.isoformat() if self.scraped_at else None,
             'source': self.source
         }
+        
+    def get_parsed_date(self) -> Optional[datetime]:
+        """Parse the date string into a datetime object"""
+        if not self.date or pd.isna(self.date):
+            return None
+        try:
+            parsed = pd.to_datetime(self.date, errors='coerce')
+            return None if pd.isna(parsed) else parsed
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"Error parsing date {self.date}: {e}")
+            return None
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'DrawRecord':

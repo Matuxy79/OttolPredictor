@@ -57,10 +57,10 @@ class TestIntegration(unittest.TestCase):
         # Check for duplicate dates
         if 'date' in data.columns:
             # Convert to datetime for proper comparison
-            data['date_parsed'] = pd.to_datetime(data['date'], errors='coerce')
+            parsed_dates = pd.to_datetime(data['date'], errors='coerce')
             
             # Count occurrences of each date
-            date_counts = data['date_parsed'].value_counts()
+            date_counts = parsed_dates.value_counts()
             
             # Find duplicates
             duplicates = date_counts[date_counts > 1]

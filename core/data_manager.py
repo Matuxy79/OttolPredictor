@@ -1,3 +1,13 @@
+def get_data_manager(data_dir: str = "data"):
+    """Factory function to get a singleton LotteryDataManager instance."""
+    # Use a module-level singleton to avoid multiple instances
+    if not hasattr(get_data_manager, "_instance"):
+        get_data_manager._instance = LotteryDataManager(data_dir)
+    # Attach helper methods for GUI access
+    _data_manager_singleton = get_data_manager._instance
+    _data_manager_singleton.get_most_recent_draw = _data_manager_singleton.get_most_recent_draw
+    _data_manager_singleton.get_most_common_combination = _data_manager_singleton.get_most_common_combination
+    return _data_manager_singleton
 """
 Unified Data Manager for Lottery Data
 
@@ -21,6 +31,173 @@ from data_sources.pdf_parser import WCLCPDFParser
 from core.data_validator import DataValidator
 
 class LotteryDataManager:
+    def get_most_recent_draw(self, game: str) -> Optional[dict]:
+        """Return the most recent draw record for the specified game."""
+        data = self.load_game_data(game)
+        if data.empty or 'date' not in data.columns:
+            return None
+        try:
+            data['date_temp'] = pd.to_datetime(data['date'], errors='coerce')
+            valid_data = data[data['date_temp'].notna()]
+            if valid_data.empty:
+                return None
+            most_recent = valid_data.sort_values('date_temp', ascending=False).iloc[0]
+            return most_recent.to_dict()
+        except Exception as e:
+            self.logger.error(f"Error getting most recent draw: {e}")
+            return None
+
+    def get_most_common_combination(self, game: str) -> Optional[List[int]]:
+        """Return the most common winning number combination for the specified game."""
+        data = self.load_game_data(game)
+        if data.empty or 'numbers_list' not in data.columns:
+            return None
+        try:
+            # Convert lists to tuples for counting
+            combos = data['numbers_list'].apply(lambda x: tuple(sorted(x)) if isinstance(x, list) else None)
+            combos = combos.dropna()
+            if combos.empty:
+                return None
+            from collections import Counter
+            most_common_combo, _ = Counter(combos).most_common(1)[0]
+            return list(most_common_combo)
+        except Exception as e:
+            self.logger.error(f"Error getting most common combination: {e}")
+            return None
+
+    def get_most_frequent_numbers(self, game: str, limit: int = 6) -> List[int]:
+        """Get the most frequently drawn numbers for a game."""
+        try:
+            data = self.load_game_data(game)
+            if data.empty:
+                return []
+
+            # Handle both 'numbers' and 'numbers_list' columns for compatibility
+            numbers_col = 'numbers_list' if 'numbers_list' in data.columns else 'numbers'
+            if numbers_col not in data.columns:
+                return []
+            
+            # Convert string numbers to lists if needed
+            if numbers_col == 'numbers' and isinstance(data[numbers_col].iloc[0], str):
+                from schema import DrawRecord
+                data['numbers_list'] = data[numbers_col].apply(
+                    lambda x: DrawRecord._parse_numbers(None, x) if x else []
+                )
+                numbers_col = 'numbers_list'
+            
+            # Flatten all numbers and count frequencies, ensuring integers
+            all_numbers = []
+            for nums in data[numbers_col]:
+                if isinstance(nums, (list, np.ndarray)):
+                    all_numbers.extend(int(n) for n in nums if n is not None)
+                
+            if not all_numbers:
+                return []
+                
+            from collections import Counter
+            frequencies = Counter(all_numbers)
+            
+            # Get valid number range for game type
+            max_num = 49 if game == '649' else 50
+            
+            # Only include numbers in valid range
+            valid_numbers = {num: freq for num, freq in frequencies.items() 
+                           if 1 <= num <= max_num}
+            
+            # Return the most common valid numbers
+            return [num for num, _ in Counter(valid_numbers).most_common(limit)]
+        except Exception as e:
+            self.logger.error(f"Error getting most frequent numbers: {e}")
+            return []
+
+    def get_least_frequent_numbers(self, game: str, limit: int = 6) -> List[int]:
+        """Get the least frequently drawn numbers for a game."""
+        try:
+            data = self.load_game_data(game)
+            if data.empty:
+                return []
+            
+            # Handle both 'numbers' and 'numbers_list' columns for compatibility
+            numbers_col = 'numbers_list' if 'numbers_list' in data.columns else 'numbers'
+            if numbers_col not in data.columns:
+                return []
+            
+            # Convert string numbers to lists if needed
+            if numbers_col == 'numbers' and isinstance(data[numbers_col].iloc[0], str):
+                from schema import DrawRecord
+                data['numbers_list'] = data[numbers_col].apply(
+                    lambda x: DrawRecord._parse_numbers(None, x) if x else []
+                )
+                numbers_col = 'numbers_list'
+            
+            # Get the valid number range for this game
+            max_num = 49 if game == '649' else 50
+            
+            # Initialize frequencies for all possible numbers
+            frequencies = {n: 0 for n in range(1, max_num + 1)}
+            
+            # Count actual frequencies
+            for nums in data[numbers_col]:
+                if isinstance(nums, (list, np.ndarray)):
+                    for n in nums:
+                        if n is not None:
+                            n = int(n)
+                            if 1 <= n <= max_num:
+                                frequencies[n] += 1
+            
+            # Return the least common numbers, breaking ties by number value
+            return [num for num, _ in sorted(frequencies.items(), 
+                                           key=lambda x: (x[1], x[0]))[:limit]]
+        except Exception as e:
+            self.logger.error(f"Error getting least frequent numbers: {e}")
+            return []
+    def refresh_all_data(self):
+        """Refresh all data from files only (scraping removed)."""
+        self.logger.info("Refreshing all data")
+        self._cache = {}
+        self._last_refresh = {}
+        for game in ['649', 'max', 'western649', 'westernmax', 'dailygrand']:
+            self.load_game_data(game, full_refresh=True)
+        self.logger.info("All data refreshed")
+    def get_game_summary(self, game: str) -> dict:
+        """Return summary statistics for the specified game for dashboard/analytics."""
+        data = self.load_game_data(game)
+        summary = {
+            'game_display_name': 'Lotto 6/49' if game == '649' else 'Lotto Max' if game == 'max' else game.title(),
+            'total_draws': 0,
+            'date_range': 'Error',
+            'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'hot_numbers': 'No data',
+            'cold_numbers': 'No data',
+            'activity_messages': []
+        }
+        if not data.empty and 'numbers_list' in data.columns:
+            summary['total_draws'] = len(data)
+            # Date range
+            if 'date' in data.columns:
+                try:
+                    dates = pd.to_datetime(data['date'], errors='coerce')
+                    valid_dates = dates.dropna()
+                    if not valid_dates.empty:
+                        summary['date_range'] = f"{valid_dates.min().strftime('%Y-%m-%d')} to {valid_dates.max().strftime('%Y-%m-%d')}"
+                except Exception as e:
+                    summary['date_range'] = 'Error'
+            # Hot/cold numbers
+            all_numbers = [n for lst in data['numbers_list'] if isinstance(lst, list) for n in lst]
+            if all_numbers:
+                from collections import Counter
+                counter = Counter(all_numbers)
+                most_common = [str(n) for n, _ in counter.most_common(6)]
+                least_common = [str(n) for n, _ in counter.most_common()[-6:]]
+                summary['hot_numbers'] = ', '.join(most_common) if most_common else 'No data'
+                summary['cold_numbers'] = ', '.join(least_common) if least_common else 'No data'
+            summary['activity_messages'].append(f"📊 Statistics for {summary['game_display_name']}")
+            summary['activity_messages'].append(f"📈 Based on all {summary['total_draws']:,} draws ({summary['date_range']})")
+            summary['activity_messages'].append(f"🔥 Hot numbers for {summary['game_display_name']}: {summary['hot_numbers']}")
+            summary['activity_messages'].append(f"❄️ Cold numbers for {summary['game_display_name']}: {summary['cold_numbers']}")
+        else:
+            summary['activity_messages'].append("⚠️ Errror loading data. Please try refreshing.")
+        return summary
     """
     Unified data manager that combines PDF archives (live scraping removed)
 
@@ -63,7 +240,12 @@ class LotteryDataManager:
         # Combine sources (no live scraping)
         combined_data = self._combine_data_sources(game, pdf_data, csv_data, pd.DataFrame())
 
-        # CRITICAL: Add numbers_list normalization to fix analytics
+        # Ensure proper date format
+        if 'date' in combined_data.columns:
+            # Standardize date format to YYYY-MM-DD
+            combined_data['date'] = pd.to_datetime(combined_data['date'], errors='coerce').dt.strftime('%Y-%m-%d')
+            # Remove rows with invalid dates
+            combined_data = combined_data.dropna(subset=['date'])        # CRITICAL: Add numbers_list normalization to fix analytics
         if not combined_data.empty:
             try:
                 self.logger.info("Normalizing numbers field to numbers_list...")
@@ -298,175 +480,32 @@ class LotteryDataManager:
 
     def get_recent_draws(self, game: str, count: int = 10) -> List[Dict]:
         """Get the most recent draws for a game"""
-        try:
-            # Load data
-            data = self.load_game_data(game)
+        # Load data
+        data = self.load_game_data(game)
 
-            if data.empty:
-                return []
-
-            # Sort by date if possible
-            if 'date' in data.columns:
-                try:
-                    data['date_temp'] = pd.to_datetime(data['date'], errors='coerce')
-                    data = data.sort_values('date_temp', ascending=False)
-                    data = data.drop('date_temp', axis=1)
-                except Exception as e:
-                    self.logger.warning(f"Error sorting by date: {e}")
-
-            # Get the most recent draws
-            recent_data = data.head(count)
-
-            # Convert to list of dictionaries
-            draws = []
-            for _, row in recent_data.iterrows():
-                draw = row.to_dict()
-
-                # Normalize numbers field
-                if 'numbers' in draw:
-                    try:
-                        numbers_str = draw['numbers']
-                        if isinstance(numbers_str, str):
-                            # Parse string representation of list
-                            if numbers_str.startswith('[') and numbers_str.endswith(']'):
-                                numbers = DataValidator.normalize_numbers_field(numbers_str)
-                                draw['numbers'] = numbers
-                    except Exception as e:
-                        self.logger.warning(f"Error normalizing numbers: {e}")
-
-                draws.append(draw)
-
-            return draws
-
-        except Exception as e:
-            self.logger.error(f"Error getting recent draws: {e}")
+        if data.empty:
             return []
 
-    def get_game_summary(self, game: str) -> Dict:
-        """Get summary statistics for a game"""
-        try:
-            # Load data
-            data = self.load_game_data(game)
+        # Sort by date if possible
+        if 'date' in data.columns:
+            try:
+                data['date_temp'] = pd.to_datetime(data['date'], errors='coerce')
+                data = data.sort_values('date_temp', ascending=False)
+                data = data.drop('date_temp', axis=1)
+            except Exception as e:
+                self.logger.warning(f"Error sorting by date: {e}")
 
-            # Debug logging
-            self.logger.info(f"Loaded {len(data)} rows for game: {game}")
+        # Get the most recent draws
+        recent_data = data.head(count)
 
-            # Create summary with defaults
-            summary = {
-                'game': game,
-                'total_draws': 0,
-                'date_range': 'No data',
-                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'most_frequent_numbers': [],
-                'least_frequent_numbers': [],
-                'recent_draws': 0
-            }
+        # Convert to list of dictionaries
+        draws = []
+        for _, row in recent_data.iterrows():
+            draw = row.to_dict()
 
-            if data.empty:
-                self.logger.info(f"Returning empty summary for game: {game}")
-                return summary
-
-            # Extract all numbers for frequency analysis
-            all_numbers = []
-            problematic_rows = 0
-
-            for idx, row in data.iterrows():
-                try:
-                    numbers = row.get('numbers_list', [])
-                    if isinstance(numbers, np.ndarray):
-                        numbers = numbers.tolist()
-                    if isinstance(numbers, list) and numbers:
-                        all_numbers.extend(numbers)
-                except Exception as e:
-                    problematic_rows += 1
-                    self.logger.warning(f"Row {idx} has problematic numbers: {e}")
-
-            self.logger.info(f"Extracted {len(all_numbers)} total numbers from {len(data)} rows")
-            self.logger.info(f"Found {problematic_rows} problematic rows")
-
-            # Update total draws
-            summary['total_draws'] = len(data)
-
-            # Calculate date range
-            if 'date' in data.columns:
-                try:
-                    data['date_temp'] = pd.to_datetime(data['date'], errors='coerce')
-                    valid_dates = data[data['date_temp'].notna()]
-
-                    if not valid_dates.empty:
-                        min_date = valid_dates['date_temp'].min().strftime('%Y-%m-%d')
-                        max_date = valid_dates['date_temp'].max().strftime('%Y-%m-%d')
-                        summary['date_range'] = f"{min_date} to {max_date}"
-
-                    # Count recent draws (last 30 days)
-                    today = pd.Timestamp(datetime.now().date())
-                    thirty_days_ago = today - pd.Timedelta(days=30)
-                    recent_draws = valid_dates[valid_dates['date_temp'] >= thirty_days_ago]
-                    summary['recent_draws'] = len(recent_draws)
-
-                    data = data.drop('date_temp', axis=1)
-                except Exception as e:
-                    self.logger.warning(f"Error calculating date range: {e}")
-
-            # Calculate number frequencies
-            if all_numbers:
-                try:
-                    # Count frequencies
-                    number_counts = {}
-                    for num in all_numbers:
-                        number_counts[num] = number_counts.get(num, 0) + 1
-
-                    # Sort by frequency
-                    sorted_numbers = sorted(number_counts.items(), key=lambda x: x[1], reverse=True)
-
-                    # Get most and least frequent
-                    summary['most_frequent_numbers'] = [num for num, count in sorted_numbers[:10]]
-                    summary['least_frequent_numbers'] = [num for num, count in sorted_numbers[-10:]]
-
-                    self.logger.info(f"Hot numbers: {summary['most_frequent_numbers'][:6]}")
-                    self.logger.info(f"Cold numbers: {summary['least_frequent_numbers'][:6]}")
-                except Exception as e:
-                    self.logger.warning(f"Error calculating number frequencies: {e}")
-
-            return summary
-
-        except Exception as e:
-            self.logger.error(f"Error getting game summary: {e}")
-            return {
-                'game': game,
-                'total_draws': 0,
-                'date_range': f'Error: {e}',
-                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'most_frequent_numbers': [],
-                'least_frequent_numbers': [],
-                'recent_draws': 0
-            }
-
-    def refresh_all_data(self) -> None:
-        """Refresh all data from files only (scraping removed)"""
-        try:
-            self.logger.info("Refreshing all data")
-
-            # Clear cache
-            self._cache = {}
-            self._last_refresh = {}
-
-            # Refresh data for each game
-            for game in ['649', 'max', 'western649', 'westernmax', 'dailygrand']:
-                self.load_game_data(game, full_refresh=True)
-
-            self.logger.info("All data refreshed")
-
-        except Exception as e:
-            self.logger.error(f"Error refreshing all data: {e}")
-
-
-# Singleton instance for global access
-_data_manager_instance = None
-
-def get_data_manager() -> LotteryDataManager:
-    """Get the singleton instance of the data manager"""
-    global _data_manager_instance
-    if _data_manager_instance is None:
-        _data_manager_instance = LotteryDataManager()
-    return _data_manager_instance
+            # Normalize numbers field
+            if 'numbers' in draw:
+                numbers_str = draw['numbers']
+                if isinstance(numbers_str, str):
+                    pass
+                         
