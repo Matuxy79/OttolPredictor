@@ -323,6 +323,14 @@ class LotteryDataManager:
         }
 
         self.logger.info(f"Loaded {len(combined_data)} records for {game}")
+        # Validate and normalize all draw records to canonical schema before returning
+        try:
+            from utils.data_validation import validate_draw_record
+            import pandas as pd
+            combined_data = combined_data.apply(lambda row: validate_draw_record(row.to_dict()), axis=1)
+            combined_data = pd.DataFrame(list(combined_data))
+        except Exception as e:
+            self.logger.error(f"Error validating draw records: {e}")
         return combined_data
 
     def _load_pdf_data(self, game: str) -> pd.DataFrame:

@@ -36,13 +36,13 @@ class StrategyDashboard(QWidget):
         
     def setup_ui(self):
         """Set up the dashboard UI"""
-        main_layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
         
         # Title
         title_label = QLabel("Strategy Performance Dashboard")
         title_label.setFont(QFont("Arial", 14, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
-        main_layout.addWidget(title_label)
+        self.main_layout.addWidget(title_label)
         
         # Game selector
         game_layout = QHBoxLayout()
@@ -51,14 +51,23 @@ class StrategyDashboard(QWidget):
         self.game_combo.addItems(["Lotto 6/49", "Lotto Max"])
         self.game_combo.currentTextChanged.connect(self.on_game_changed)
         game_layout.addWidget(self.game_combo)
-        
+        # Strategy selector (creative, scalable dropdown)
+        game_layout.addWidget(QLabel("Strategy:"))
+        self.strategy_combo = QComboBox()
+        self.strategy_combo.addItems(["Uniform", "Recency Light", "Recency Medium", "Recency Heavy", "Era Based", "Random"])
+        self.strategy_combo.currentTextChanged.connect(self.on_strategy_changed)
+        game_layout.addWidget(self.strategy_combo)
         # Refresh button
         refresh_btn = QPushButton("🔄 Refresh")
         refresh_btn.clicked.connect(self.refresh_data)
         game_layout.addWidget(refresh_btn)
-        
         game_layout.addStretch()
-        main_layout.addLayout(game_layout)
+        self.main_layout.addLayout(game_layout)
+
+    def on_strategy_changed(self, strategy_text):
+        """Handle strategy selection change"""
+        self.current_strategy = strategy_text.lower().replace(" ", "_")
+        self.refresh_data()
         
         # Strategy summary section
         summary_group = QGroupBox("Strategy Performance Summary")
@@ -101,7 +110,7 @@ class StrategyDashboard(QWidget):
         
         summary_layout.addWidget(self.strategy_table)
         
-        main_layout.addWidget(summary_group)
+        self.main_layout.addWidget(summary_group)
         
         # Performance chart
         chart_group = QGroupBox("Strategy Comparison Chart")
@@ -112,7 +121,7 @@ class StrategyDashboard(QWidget):
         self.canvas = FigureCanvas(self.figure)
         chart_layout.addWidget(self.canvas)
         
-        main_layout.addWidget(chart_group)
+        self.main_layout.addWidget(chart_group)
         
         # Set initial data
         self.refresh_data()

@@ -199,33 +199,43 @@ class PredictionLogger:
         except Exception as e:
             self.logger.error(f"Error saving predictions: {e}")
 
-    def get_performance_summary(self) -> Dict:
-        """Get overall performance summary"""
-        if not self.predictions:
+    def get_performance_summary(self, game: str = None, days: int = None) -> Dict:
+        """Get performance summary, optionally filtered by game and days (for future-proofing)."""
+        # Filter predictions by game and days if provided
+        filtered = self.predictions
+        if game:
+            filtered = [p for p in filtered if getattr(p, 'game', None) == game]
+        if days is not None:
+            cutoff = datetime.now() - timedelta(days=days)
+            filtered = [p for p in filtered if datetime.fromisoformat(p.timestamp.split('T')[0]) >= cutoff]
+
+        if not filtered:
             return {
                 'total_predictions': 0,
                 'evaluated_predictions': 0,
                 'total_wins': 0,
-                'overall_win_rate': 0,
+                'overall_win_rate': 0.0,
                 'best_strategy': None
             }
 
-        evaluated = [p for p in self.predictions if p.evaluated]
-        wins = [p for p in evaluated if p.did_win]
+        evaluated = [p for p in filtered if getattr(p, 'evaluated', False)]
+        wins = [p for p in evaluated if getattr(p, 'did_win', False)]
 
         summary = {
-            'total_predictions': len(self.predictions),
+            'total_predictions': len(filtered),
             'evaluated_predictions': len(evaluated),
             'total_wins': len(wins),
-            'overall_win_rate': (len(wins) / len(evaluated) * 100) if evaluated else 0,
+            'overall_win_rate': (len(wins) / len(evaluated) * 100) if evaluated else 0.0,
             'best_strategy': None
         }
 
-        # Find best strategy
-        strategy_performance = self.get_strategy_performance(days=365)  # All time
+        # Find best strategy in filtered set
+        strategy_performance = self.get_strategy_performance(days=days or 365)
+        if game:
+            # Only consider strategies for this game
+            strategy_performance = {k: v for k, v in strategy_performance.items() if k}
         if strategy_performance:
-            best_strategy = max(strategy_performance.items(), 
-                              key=lambda x: x[1]['win_rate'])
+            best_strategy = max(strategy_performance.items(), key=lambda x: x[1]['win_rate'])
             summary['best_strategy'] = {
                 'name': best_strategy[0],
                 'win_rate': best_strategy[1]['win_rate']

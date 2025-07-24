@@ -76,7 +76,16 @@ class WCLCPDFParser:
         self.logger.info(f"Successfully parsed {len(df)} draws from 649 PDF")
 
         # Normalize to match CSV format
-        return self._normalize_to_csv_format(df)
+        df = self._normalize_to_csv_format(df)
+        # Schema validation: ensure canonical fields
+        try:
+            from utils.data_validation import validate_draw_record
+            import pandas as pd
+            df = df.apply(lambda row: validate_draw_record(row.to_dict()), axis=1)
+            df = pd.DataFrame(list(df))
+        except Exception as e:
+            self.logger.warning(f"Error validating draw records: {e}")
+        return df
 
     def parse_max_archive(self) -> pd.DataFrame:
         """Parse LOTTO MAX since Inception.pdf"""
@@ -131,7 +140,16 @@ class WCLCPDFParser:
         self.logger.info(f"Successfully parsed {len(df)} draws from Max PDF")
 
         # Normalize to match CSV format
-        return self._normalize_to_csv_format(df)
+        df = self._normalize_to_csv_format(df)
+        # Schema validation: ensure canonical fields
+        try:
+            from utils.data_validation import validate_draw_record
+            import pandas as pd
+            df = df.apply(lambda row: validate_draw_record(row.to_dict()), axis=1)
+            df = pd.DataFrame(list(df))
+        except Exception as e:
+            self.logger.warning(f"Error validating draw records: {e}")
+        return df
 
     def _parse_649_line(self, line: str) -> Optional[Dict]:
         """

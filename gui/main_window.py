@@ -41,6 +41,7 @@ from wclc_scraper import WCLCScraper
 from config import AppConfig
 from tracking.prediction_logger import PredictionLogger
 from core.activity_logger import ActivityLogger
+from prediction_generator import batch_generate_predictions_for_date_range
 
 # Import new modules
 from core.data_manager import get_data_manager
@@ -155,6 +156,13 @@ class ScraperWorker(QRunnable):
             self.signals.finished.emit(False, f"Error: {str(e)}")
 
 class SaskatoonLottoPredictor(QMainWindow):
+    def init_data_entry_tab(self):
+        """Stub for Data Entry tab to prevent GUI crash. Replace with real implementation as needed."""
+        from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.addWidget(QLabel("Data Entry tab is under construction."))
+        return tab
     """Main application window"""
 
     def __init__(self):
@@ -345,11 +353,12 @@ class SaskatoonLottoPredictor(QMainWindow):
         # Add new WCLC data entry tab
         self.init_data_entry_tab()
 
+        # Add batch prediction tab
+        batch_tab = self.create_batch_prediction_tab()
+        self.tab_widget.addTab(batch_tab, "Batch Prediction")
+
         parent_layout.addWidget(self.tab_widget)
 
-    def create_dashboard_tab(self):
-        """Create dashboard overview tab"""
-        dashboard_widget = QWidget()
     def create_dashboard_tab(self):
         """Create dashboard overview tab"""
         dashboard_widget = QWidget()
@@ -573,7 +582,8 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.tab_widget.addTab(draws_widget, "📅 Recent Draws")
 
     def create_analytics_tab(self):
-        """Create comprehensive analytics tab with prediction performance"""
+        """Create comprehensive analytics tab with prediction performance, powered by WCLCScraper"""
+        from wclc_scraper import WCLCScraper
         analytics_widget = QWidget()
         layout = QVBoxLayout(analytics_widget)
 
@@ -584,17 +594,20 @@ class SaskatoonLottoPredictor(QMainWindow):
         controls_layout.addWidget(QLabel("Analyze:"))
         self.analytics_game_selector = QComboBox()
         self.analytics_game_selector.addItems(["Lotto 6/49", "Lotto Max"])
-        self.analytics_game_selector.currentTextChanged.connect(self.update_analytics_charts)
         controls_layout.addWidget(self.analytics_game_selector)
+
+        # Analytics type selector (creative, scalable dropdown)
+        controls_layout.addWidget(QLabel("View:"))
+        self.analytics_type_selector = QComboBox()
+        self.analytics_type_selector.addItems(["Frequency", "Trends", "Pairs", "Performance"])
+        controls_layout.addWidget(self.analytics_type_selector)
 
         # Refresh button
         refresh_btn = QPushButton("🔄 Refresh Charts")
-        refresh_btn.clicked.connect(self.update_analytics_charts)
         controls_layout.addWidget(refresh_btn)
 
         # Export button
         export_btn = QPushButton("📊 Export Analytics")
-        export_btn.clicked.connect(self.export_analytics_data)
         controls_layout.addWidget(export_btn)
 
         controls_layout.addStretch()
@@ -614,52 +627,24 @@ class SaskatoonLottoPredictor(QMainWindow):
         """)
 
         insights_layout = QHBoxLayout(self.insights_frame)
-
         self.total_predictions_label = QLabel("📈 Total Predictions: Loading...")
         insights_layout.addWidget(self.total_predictions_label)
-
         self.best_strategy_label = QLabel("🏆 Best Strategy: Loading...")
         insights_layout.addWidget(self.best_strategy_label)
-
         self.win_rate_label = QLabel("🎯 Win Rate: Loading...")
         insights_layout.addWidget(self.win_rate_label)
-
         layout.addWidget(self.insights_frame)
 
-        # Create tab widget for different chart types
-        self.analytics_tabs = QTabWidget()
+        # Chart area (single widget, updates based on analytics type)
+        self.analytics_chart_widget = EmbeddedChartWidget()
+        self.analytics_chart_widget.setMinimumHeight(400)
+        layout.addWidget(self.analytics_chart_widget)
 
-        # Historical Data Tab
-        self.historical_tab = QWidget()
-        historical_layout = QVBoxLayout(self.historical_tab)
-
-        # Create embedded chart widgets for frequency and trend charts
-        self.frequency_chart_widget = EmbeddedChartWidget()
-        self.frequency_chart_widget.setMinimumHeight(300)
-        historical_layout.addWidget(self.frequency_chart_widget)
-
-        self.trend_chart_widget = EmbeddedChartWidget()
-        self.trend_chart_widget.setMinimumHeight(300)
-        historical_layout.addWidget(self.trend_chart_widget)
-
-        self.analytics_tabs.addTab(self.historical_tab, "📊 Historical Data")
-
-        # Prediction Performance Tab
-        self.performance_tab = QWidget()
-        performance_layout = QVBoxLayout(self.performance_tab)
-
-        # Create embedded chart widgets for performance charts
-        self.performance_chart_widget = EmbeddedChartWidget()
-        self.performance_chart_widget.setMinimumHeight(300)
-        performance_layout.addWidget(self.performance_chart_widget)
-
-        self.strategy_chart_widget = EmbeddedChartWidget()
-        self.strategy_chart_widget.setMinimumHeight(300)
-        performance_layout.addWidget(self.strategy_chart_widget)
-
-        self.analytics_tabs.addTab(self.performance_tab, "🎯 Prediction Performance")
-
-        layout.addWidget(self.analytics_tabs)
+        # Connect dropdowns and buttons
+        self.analytics_game_selector.currentTextChanged.connect(self.update_analytics_charts)
+        self.analytics_type_selector.currentTextChanged.connect(self.update_analytics_charts)
+        refresh_btn.clicked.connect(self.update_analytics_charts)
+        export_btn.clicked.connect(self.export_analytics_data)
 
         # Update charts on initial load
         QTimer.singleShot(500, self.update_analytics_charts)
@@ -1615,20 +1600,41 @@ class SaskatoonLottoPredictor(QMainWindow):
         self.scraper_results_text.append(f"Error: {error_message}")
 
     def update_analytics_charts(self):
-        """Update all analytics charts with current data"""
+        """Update analytics chart and insights using WCLCScraper and analytics type selector"""
+        from wclc_scraper import WCLCScraper
         try:
             game_text = self.analytics_game_selector.currentText()
             game = "649" if "6/49" in game_text else "max"
-
-            # Update insights summary
+            analytics_type = self.analytics_type_selector.currentText()
+            scraper = WCLCScraper()
+            # Get data for the selected game
+            data = scraper.deduplicate_draws(scraper.load_game_data(game)) if hasattr(scraper, 'load_game_data') else []
+            # Update insights summary (reuse existing method if possible)
             self.update_analytics_insights(game)
-
-            # Update historical charts
-            self.update_historical_charts(game)
-
-            # Update prediction performance charts  
-            self.update_performance_charts(game)
-
+            # Update chart based on analytics type
+            fig = None
+            if analytics_type == "Frequency":
+                from analytics import get_analytics_engine
+                analytics = get_analytics_engine()
+                fig = analytics.plot_number_frequency(game)
+            elif analytics_type == "Trends":
+                from analytics import get_analytics_engine
+                analytics = get_analytics_engine()
+                fig = analytics.plot_trend_analysis(game)
+            elif analytics_type == "Pairs":
+                from analytics import get_analytics_engine
+                analytics = get_analytics_engine()
+                fig = analytics.plot_number_pairs(game)
+            elif analytics_type == "Performance":
+                from analytics import get_analytics_engine
+                analytics = get_analytics_engine()
+                fig = analytics.plot_prediction_performance(game)
+            if fig:
+                self.analytics_chart_widget.display_figure(fig)
+                import matplotlib.pyplot as plt
+                plt.close(fig)
+            else:
+                self.analytics_chart_widget.display_error("No chart available for this analytics type.")
         except Exception as e:
             logger.error(f"Failed to update analytics charts: {e}")
 
@@ -1995,20 +2001,21 @@ class SaskatoonLottoPredictor(QMainWindow):
     def update_prediction_performance(self):
         """Update prediction performance display in analytics tab"""
         try:
+
             # First, evaluate any pending predictions
             self.prediction_logger.evaluate_predictions(self.data_manager)
 
-            # Get performance data
+            # Get performance data (filtered by game and last 30 days)
             game = self.get_current_game_code()
             recent_predictions = self.prediction_logger.get_recent_predictions(game, days=30)
-            performance_summary = self.prediction_logger.get_performance_summary()
+            performance_summary = self.prediction_logger.get_performance_summary(game=game, days=30)
 
             # Update analytics insights to include prediction performance
             if hasattr(self, 'analytics_insights_text'):
                 insights_text = self.analytics_insights_text.toPlainText()
 
                 # Add prediction performance section
-                perf_text = f"\n\n🎯 PREDICTION PERFORMANCE:\n"
+                perf_text = f"\n\n🎯 PREDICTION PERFORMANCE (last 30 days):\n"
                 perf_text += f"• Total Predictions: {performance_summary['total_predictions']}\n"
                 perf_text += f"• Evaluated: {performance_summary['evaluated_predictions']}\n"
                 perf_text += f"• Wins: {performance_summary['total_wins']}\n"
@@ -2020,7 +2027,7 @@ class SaskatoonLottoPredictor(QMainWindow):
 
                 # Show recent predictions
                 if recent_predictions:
-                    perf_text += f"\n📋 RECENT PREDICTIONS ({len(recent_predictions)} last 30 days):\n"
+                    perf_text += f"\n📋 RECENT PREDICTIONS ({len(recent_predictions)}):\n"
                     for i, pred in enumerate(recent_predictions[:5]):  # Show last 5
                         status = "✅ WIN" if pred.get('did_win') else "❌ MISS"
                         matches = pred.get('match_count', 0) if pred.get('evaluated') else "Pending"
@@ -2028,9 +2035,9 @@ class SaskatoonLottoPredictor(QMainWindow):
                         perf_text += f"• {date}: {pred['predicted_numbers']} - {status} ({matches} matches)\n"
 
                 # Update the insights text
-                if "🎯 PREDICTION PERFORMANCE:" in insights_text:
+                if "🎯 PREDICTION PERFORMANCE" in insights_text:
                     # Replace existing performance section
-                    parts = insights_text.split("🎯 PREDICTION PERFORMANCE:")
+                    parts = insights_text.split("🎯 PREDICTION PERFORMANCE")
                     insights_text = parts[0] + perf_text
                 else:
                     # Add new performance section
@@ -2041,116 +2048,81 @@ class SaskatoonLottoPredictor(QMainWindow):
         except Exception as e:
             logger.error(f"Error updating prediction performance: {e}")
 
-    def add_activity_message(self, message: str, activity_type: str = "info", details: dict = None):
-        """
-        Add a message to the recent activity log
-        
-        Args:
-            message: The activity message to display
-            activity_type: Type of activity (data/prediction/analysis/error/maintenance)
-            details: Optional dict with additional activity details
-        """
-        try:
-            if hasattr(self, 'activity_logger'):
-                self.activity_logger.log_activity(
-                    message,
-                    activity_type,
-                    details or {},
-                    "gui"
-                )
-            # Also log to application log
-            logger.info(f"Activity: {message}")
-        except Exception as e:
-            logger.error(f"Failed to add activity message: {e}")
+    def create_batch_prediction_tab(self):
+        """Create a tab for batch prediction by date range."""
+        from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QDateEdit, QPushButton, QTableWidget, QTableWidgetItem
+        from PyQt5.QtCore import QDate
+        tab = QWidget()
+        layout = QVBoxLayout()
 
-    def update_performance_display(self):
-        """Update the performance display with recent statistics"""
-        try:
-            performance = self.prediction_logger.get_strategy_performance(days=30)
+        # Controls
+        controls_layout = QHBoxLayout()
+        controls_layout.addWidget(QLabel("Game:"))
+        self.batch_game_combo = QComboBox()
+        self.batch_game_combo.addItems(['649', 'max'])
+        controls_layout.addWidget(self.batch_game_combo)
+        controls_layout.addWidget(QLabel("Start Date:"))
+        self.batch_start_date = QDateEdit()
+        self.batch_start_date.setCalendarPopup(True)
+        self.batch_start_date.setDate(QDate.currentDate().addMonths(-1))
+        controls_layout.addWidget(self.batch_start_date)
+        controls_layout.addWidget(QLabel("End Date:"))
+        self.batch_end_date = QDateEdit()
+        self.batch_end_date.setCalendarPopup(True)
+        self.batch_end_date.setDate(QDate.currentDate())
+        controls_layout.addWidget(self.batch_end_date)
+        self.batch_run_button = QPushButton("Run Batch Prediction")
+        self.batch_run_button.clicked.connect(self.on_run_batch_prediction)
+        controls_layout.addWidget(self.batch_run_button)
+        layout.addLayout(controls_layout)
 
-            if performance:
-                total_predictions = sum(p['total_predictions'] for p in performance.values())
-                total_wins = sum(p['wins'] for p in performance.values())
+        # Results table
+        self.batch_results_table = QTableWidget()
+        self.batch_results_table.setColumnCount(5)
+        self.batch_results_table.setHorizontalHeaderLabels(["Draw Date", "Strategy", "Prediction", "Actual", "Matches"])
+        layout.addWidget(self.batch_results_table)
 
-                if total_predictions > 0:
-                    overall_win_rate = (total_wins / total_predictions) * 100
-                    self.performance_label.setText(
-                        f"📈 Last 30 days: {total_predictions} predictions, "
-                        f"{total_wins} wins ({overall_win_rate:.1f}% win rate)"
-                    )
-                else:
-                    self.performance_label.setText("📈 No recent predictions to analyze")
-            else:
-                self.performance_label.setText("📈 Performance tracking will begin after first prediction")
+        # Batch performance summary label
+        self.batch_performance_label = QLabel("Batch performance summary will appear here.")
+        self.batch_performance_label.setStyleSheet("margin: 8px; font-weight: bold; color: #007bff;")
+        layout.addWidget(self.batch_performance_label)
 
-        except Exception as e:
-            logger.error(f"Failed to update performance display: {e}")
-            self.performance_label.setText("📈 Performance: Unable to load")
+        tab.setLayout(layout)
+        return tab
 
-    def init_data_entry_tab(self):
-        """Initialize the WCLC data entry tab"""
-        data_entry_tab = QWidget()
-        layout = QVBoxLayout(data_entry_tab)
+    def on_run_batch_prediction(self):
+        game = self.batch_game_combo.currentText()
+        start_date = self.batch_start_date.date().toString("yyyy-MM-dd")
+        end_date = self.batch_end_date.date().toString("yyyy-MM-dd")
+        results = batch_generate_predictions_for_date_range(game, start_date, end_date)
+        self.batch_results_table.setRowCount(len(results))
+        for row, result in enumerate(results):
+            self.batch_results_table.setItem(row, 0, QTableWidgetItem(str(result['draw_date'])))
+            self.batch_results_table.setItem(row, 1, QTableWidgetItem(str(result['strategy'])))
+            self.batch_results_table.setItem(row, 2, QTableWidgetItem(str(result['prediction'])))
+            self.batch_results_table.setItem(row, 3, QTableWidgetItem(str(result['actual'])))
+            # Calculate matches
+            matches = len(set(result['prediction']) & set(result['actual']))
+            self.batch_results_table.setItem(row, 4, QTableWidgetItem(str(matches)))
+        # Update batch performance summary
+        self.update_performance_display(results)
 
-        # Create and add the WCLC data entry widget
-        self.wclc_entry_widget = WCLCDataEntryWidget()
-        layout.addWidget(self.wclc_entry_widget)
-
-        # Add tab to main tab widget
-        self.tab_widget.addTab(data_entry_tab, "Data Entry")
-
-    def update_activity_panel(self, new_activity=None):
-        """Update the activity panel with formatted activities"""
-        if not hasattr(self, 'recent_activity_text'):
-            return
-            
-        try:
-            activities = self.activity_logger.get_recent_activities(10)
-            
-            if new_activity:
-                # Format and add new activity at the top
-                formatted = self.activity_logger.format_activity_for_display(new_activity)
-                html_activity = f"""
-                <div style="margin-bottom: 8px; padding: 8px; {'; '.join([f'{k}: {v}' for k,v in formatted['style'].items()])}">
-                    <span style="font-weight: bold;">{formatted['message']}</span><br>
-                    <span style="color: #666; font-size: 0.9em;">
-                        {formatted['timestamp']} | {formatted['source']}
-                    </span>
-                </div>
-                """
-                current_html = self.recent_activity_text.toHtml()
-                self.recent_activity_text.setHtml(html_activity + current_html)
-            else:
-                # Full refresh of activity panel
-                html_content = []
-                for activity in activities:
-                    formatted = self.activity_logger.format_activity_for_display(activity)
-                    html_content.append(f"""
-                    <div style="margin-bottom: 8px; padding: 8px; {'; '.join([f'{k}: {v}' for k,v in formatted['style'].items()])}">
-                        <span style="font-weight: bold;">{formatted['message']}</span><br>
-                        <span style="color: #666; font-size: 0.9em;">
-                            {formatted['timestamp']} | {formatted['source']}
-                        </span>
-                    </div>
-                    """)
-                self.recent_activity_text.setHtml('\n'.join(html_content))
-                
-        except Exception as e:
-            logging.error(f"Error updating activity panel: {e}")
-
-    def clear_activity_log(self):
-        """Clear the activity log"""
-        if hasattr(self, 'activity_logger'):
-            self.activity_logger.clear_history()
-            if hasattr(self, 'recent_activity_text'):
-                self.recent_activity_text.clear()
-                self.activity_logger.log_activity(
-                    "Activity log cleared",
-                    "maintenance",
-                    {"source": "user"},
-                    "gui"
-                )
-
+    def update_performance_display(self, *args, **kwargs):
+        """Update performance display for batch predictions."""
+        # Accepts results as first arg (from on_run_batch_prediction)
+        results = args[0] if args else None
+        if results is not None and hasattr(self, 'batch_performance_label'):
+            total = len(results)
+            if total == 0:
+                self.batch_performance_label.setText("No draws processed.")
+                return
+            avg_matches = sum(len(set(r['prediction']) & set(r['actual'])) for r in results) / total
+            # Example: 3+ matches is a win
+            wins = sum(1 for r in results if len(set(r['prediction']) & set(r['actual'])) >= 3)
+            self.batch_performance_label.setText(
+                f"Processed {total} draws | Avg matches: {avg_matches:.2f} | Wins (3+ matches): {wins}"
+            )
+        # If called from other contexts, do nothing (or expand as needed)
 
 def main():
     """Main application entry point"""
